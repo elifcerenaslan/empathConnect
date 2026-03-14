@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'features/home/view/home_view.dart';
+import 'core/theme/app_theme.dart';
 
 void main() {
 runApp(const EmpathConnectApp());
@@ -13,10 +13,15 @@ Widget build(BuildContext context) {
 return MaterialApp(
 title: 'EmpathConnect',
 debugShowCheckedModeBanner: false,
-theme: ThemeData(
-useMaterial3: true,
+theme: AppTheme.lightTheme,
+darkTheme: AppTheme.darkTheme,
+themeMode: ThemeMode.system,
+// Kimsenin kafası karışmasın diye tarafsız bir ana sayfa bırakıyoruz
+home: const Scaffold(
+body: Center(
+child: Text('Ana Sayfa (Yapım Aşamasında)'),
 ),
-home: const HomeView(),
+),
 );
 }
 }
