@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
+import 'core/providers/theme_provider.dart';
+import 'features/home/view/home_view.dart';
 
 void main() {
   runApp(const EmpathConnectApp());
@@ -10,17 +13,19 @@ class EmpathConnectApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'EmpathConnect',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme, 
-      darkTheme: AppTheme.darkTheme, 
-      themeMode: ThemeMode.system, 
-      // Ekip arkadaşların için tarafsız bir giriş ekranı bırakıyoruz
-      home: const Scaffold(
-        body: Center(
-          child: Text('Empath Connect Uygulaması (Yapım Aşamasında)'),
-        ),
+    return ChangeNotifierProvider(
+      create: (context) => ThemeProvider(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, child) {
+          return MaterialApp(
+            title: 'EmpathConnect',
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
+            home: const HomeView(),
+          );
+        },
       ),
     );
   }
