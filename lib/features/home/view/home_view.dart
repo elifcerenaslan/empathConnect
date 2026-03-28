@@ -6,6 +6,7 @@ import 'widgets/chatbot_fab.dart';
 import 'widgets/bottom_navigation.dart';
 import 'widgets/breathing_exercise_card.dart';
 import '../../diary/view/diary_view.dart';
+import '../../meditation/view/meditation_view.dart';
 import '../../profile/view/profile_view.dart';
 
 class HomeView extends StatefulWidget {
@@ -55,7 +56,14 @@ class _HomeViewState extends State<HomeView> {
       case 2: // Home - already here
         break;
       case 3: // Meditation
-        // TODO: Navigate to meditation
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const MeditationView()),
+        ).then((_) {
+          setState(() {
+            _currentIndex = 2;
+          });
+        });
         break;
       case 4: // Map
         // TODO: Navigate to map

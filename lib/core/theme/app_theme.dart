@@ -16,6 +16,43 @@ class AppTheme {
     0xFF4CAF50,
   ); // Kullanıcının verdiği yeşil
 
+  /// Meditasyon “Oturumu bitir” — temadan açık yüzey (light/dark).
+  static const Color meditationEndButtonBackgroundLight = _pastelPrimary;
+  static const Color meditationEndButtonForegroundLight = _darkBluePrimary;
+  static const Color meditationEndButtonBackgroundDark = _darkBlueLight;
+  static const Color meditationEndButtonForegroundDark = _darkBluePrimary;
+
+  // ——— Meditasyon sayfası (tümü aşağıdaki paletten türetilir) ———
+  static const Color meditationPageBackgroundLight = _pastelSecondary;
+  static const Color meditationPageBackgroundDark = _darkBluePrimary;
+  static const Color meditationTextPrimaryLight = _darkBluePrimary;
+  static const Color meditationTextPrimaryDark = _pastelSecondary;
+  static const Color meditationTextMutedLight = _darkBlueAccent;
+  static const Color meditationTextMutedDark = _darkBlueLight;
+  static const Color meditationCardSurfaceLight = _pastelSecondary;
+  static const Color meditationCardSurfaceDark = _darkBlueSecondary;
+  static const Color meditationBreathCoreLight = _pastelPrimary;
+  static const Color meditationBreathCoreDark = _darkBlueSecondary;
+  static const Color meditationBreathGlowBase = _pastelAccent;
+  static const Color meditationBreathRing = _pastelHighlight;
+  static const Color meditationBreathRingAlt = _pastelAccent;
+  static const Color meditationBreathLeafLight = _pastelSecondary;
+  static const Color meditationBreathLeafDark = _pastelPrimary;
+  static const Color meditationTimerSeparator = _darkBlueAccent;
+  static const Color meditationVibrationCircleLight = _pastelPrimary;
+  static const Color meditationVibrationCircleDark = _darkBlueAccent;
+  static const Color meditationSwitchTrackActive = _pastelGreen;
+  static const Color meditationSwitchThumb = _pastelSecondary;
+  static const Color meditationSoundChipSelectedLight = _pastelAccent;
+  static const Color meditationSoundChipSelectedDark = _darkBlueAccent;
+  static const Color meditationSoundChipUnselectedLight = _pastelPrimary;
+  static const Color meditationSoundChipUnselectedDark = _darkBlueSecondary;
+  static const Color meditationSoundChipBorder = _pastelHighlight;
+  static const Color meditationSoundIconSelectedLight = _darkBluePrimary;
+  static const Color meditationSoundIconSelectedDark = _pastelSecondary;
+  static const Color meditationSoundIconUnselectedLight = _darkBlueAccent;
+  static const Color meditationSoundIconUnselectedDark = _darkBlueLight;
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -102,8 +139,8 @@ class AppTheme {
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: Color(0xFF4CAF50), // Yeşil renk
-          foregroundColor: Colors.white,
+          backgroundColor: _pastelGreen,
+          foregroundColor: _pastelSecondary,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),

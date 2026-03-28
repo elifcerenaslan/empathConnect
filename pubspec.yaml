@@ -44,6 +44,9 @@ dependencies:
   # Shared Preferences for theme persistence
   shared_preferences: ^2.2.2
 
+  # Ambient / meditation (web dahil daha stabil)
+  just_audio: ^0.9.46
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

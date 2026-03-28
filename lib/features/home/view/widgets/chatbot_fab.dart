@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../emergency/view/chatbot_view.dart';
+
 class ChatbotFab extends StatelessWidget {
   const ChatbotFab({super.key});
 
@@ -12,7 +14,10 @@ class ChatbotFab extends StatelessWidget {
         height: 70,
         child: FloatingActionButton(
           onPressed: () {
-            // No functionality for now
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ChatbotView()),
+            );
           },
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Theme.of(context).colorScheme.onPrimary,

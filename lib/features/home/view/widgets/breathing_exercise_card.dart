@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../meditation/view/meditation_view.dart';
+
 class BreathingExerciseCard extends StatelessWidget {
   const BreathingExerciseCard({super.key});
 
@@ -8,7 +10,10 @@ class BreathingExerciseCard extends StatelessWidget {
     return Card(
       child: InkWell(
         onTap: () {
-          // TODO: Navigate to breathing exercise
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const MeditationView()),
+          );
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(
