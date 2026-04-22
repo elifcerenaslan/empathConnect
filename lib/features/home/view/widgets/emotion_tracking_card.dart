@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../diary/view/diary_view.dart';
+
 class EmotionTrackingCard extends StatelessWidget {
   const EmotionTrackingCard({super.key});
 
@@ -8,7 +10,12 @@ class EmotionTrackingCard extends StatelessWidget {
     return Card(
       child: InkWell(
         onTap: () {
-          Navigator.pushNamed(context, '/diary');
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const DiaryView(),
+            ),
+          );
         },
         borderRadius: BorderRadius.circular(16),
         child: Padding(

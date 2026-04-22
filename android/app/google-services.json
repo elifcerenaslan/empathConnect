@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "361845443818",
+    "project_id": "empath-connect-istun",
+    "storage_bucket": "empath-connect-istun.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:361845443818:android:666a1c610c4a827b791b93",
+        "android_client_info": {
+          "package_name": "com.example.empath_connect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmXuQwV1_a4CbqXvi4WTceHo0FIfAa3QY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

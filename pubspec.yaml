@@ -46,6 +46,10 @@ dependencies:
 
   # Ambient / meditation (web dahil daha stabil)
   just_audio: ^0.9.46
+  
+  firebase_core: ^3.10.1
+  firebase_auth: ^5.4.1
+  cloud_firestore: ^5.6.1
 
 dev_dependencies:
   flutter_test:
