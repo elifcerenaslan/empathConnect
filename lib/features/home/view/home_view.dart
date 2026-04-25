@@ -8,6 +8,9 @@ import 'widgets/breathing_exercise_card.dart';
 import '../../diary/view/diary_view.dart';
 import '../../meditation/view/meditation_view.dart';
 import '../../profile/view/profile_view.dart';
+// 1. DEĞİŞİM: SOS Sayfasının adresini içeri aktardık
+import '../../sos/view/sos_view.dart'; 
+import '../../sos/view/all_points_map_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -65,8 +68,11 @@ class _HomeViewState extends State<HomeView> {
           });
         });
         break;
-      case 4: // Map
-        // TODO: Navigate to map
+      case 4: // Harita butonu tıklandığında
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const AllPointsMapView()),
+        );
         break;
     }
   }
@@ -86,7 +92,7 @@ class _HomeViewState extends State<HomeView> {
               color: Theme.of(context).colorScheme.primary,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(Icons.account_circle, size: 36, color: Colors.white),
+            child: const Icon(Icons.account_circle, size: 36, color: Colors.white),
           ),
           onPressed: () {
             Navigator.push(
@@ -98,12 +104,16 @@ class _HomeViewState extends State<HomeView> {
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 16),
-            child: Container(
+            child: SizedBox(
               width: 100,
               height: 60,
               child: ElevatedButton(
+                // 2. DEĞİŞİM: Butona basıldığında SOS sayfasına gitme komutunu verdik
                 onPressed: () {
-                  // No functionality for now
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SosView()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
