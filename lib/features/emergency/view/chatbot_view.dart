@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../data/chat_message.dart';
 import '../services/chat_storage_service.dart';
+import '../services/gemini_service.dart';
 
 class ChatbotView extends StatefulWidget {
   const ChatbotView({super.key});
@@ -16,14 +17,8 @@ class _ChatbotViewState extends State<ChatbotView> {
 
   List<ChatMessage> _messages = [];
   ChatStorageService? _storage;
-  int _localReplyIndex = 0;
-
-  static const List<String> _localMiaReplies = [
-    'Duygularını paylaştığın için teşekkür ederim. Şu an sohbet yalnızca bu cihazda saklanıyor; seni dinlediğimi bilmeni istiyorum.',
-    'Anlattıkların önemli. Mesajın kaydedildi. Kendine nazik olmayı ve ihtiyaç duyduğunda güvendiğin biriyle konuşmayı ihmal etme.',
-    'Buradayım; yazdıkların güvende. Zor bir gün mü geçiriyorsun? Nefes alıp yavaşlamak bazen yardımcı olur.',
-    'Seni duyuyorum. Bu alan şimdilik yalnızca senin kayıtların için; ileride daha akıllı yanıtlar eklenebilir. Paylaştığın için teşekkürler.',
-  ];
+  String? _currentSessionId;
+  List<Map<String, String>> _sessions = [];
 
   bool _loadingHistory = true;
   bool _sending = false;
@@ -36,31 +31,63 @@ class _ChatbotViewState extends State<ChatbotView> {
 
   Future<void> _bootstrap() async {
     final storage = await ChatStorageService.create();
-    final loaded = storage.loadMessages();
+    final sessionId = storage.getCurrentSessionId();
+    final loaded = storage.loadMessages(sessionId);
+    
     if (!mounted) return;
 
     if (loaded.isEmpty) {
       final welcome = ChatMessage.welcome();
       setState(() {
         _storage = storage;
+        _currentSessionId = sessionId;
         _messages = [welcome];
+        _sessions = storage.getSessions();
         _loadingHistory = false;
       });
-      await storage.saveMessages(_messages);
+      await storage.saveMessages(sessionId, _messages);
     } else {
       setState(() {
         _storage = storage;
+        _currentSessionId = sessionId;
         _messages = loaded;
+        _sessions = storage.getSessions();
         _loadingHistory = false;
       });
     }
     _scrollToBottom();
   }
 
+  Future<void> _loadSession(String sessionId) async {
+    if (_storage == null) return;
+    setState(() => _loadingHistory = true);
+    _storage!.setCurrentSessionId(sessionId);
+    final loaded = _storage!.loadMessages(sessionId);
+    setState(() {
+      _currentSessionId = sessionId;
+      _messages = loaded;
+      _loadingHistory = false;
+    });
+    _scrollToBottom();
+  }
+
+  Future<void> _startNewSession() async {
+    if (_storage == null) return;
+    final sessionId = _storage!.createNewSession();
+    await _loadSession(sessionId);
+    setState(() {
+      _sessions = _storage!.getSessions();
+    });
+  }
+
   Future<void> _persist() async {
     final s = _storage;
-    if (s == null) return;
-    await s.saveMessages(_messages);
+    final id = _currentSessionId;
+    if (s == null || id == null) return;
+    await s.saveMessages(id, _messages);
+    setState(() {
+      _sessions = s.getSessions();
+    });
   }
 
   Future<void> _send() async {
@@ -82,17 +109,15 @@ class _ChatbotViewState extends State<ChatbotView> {
     await _persist();
     _scrollToBottom();
 
-    await Future<void>.delayed(const Duration(milliseconds: 500));
+    // Call Gemini
+    final replyText = await GeminiService.sendMessage(text, _messages);
+    
     if (!mounted) return;
-
-    final reply =
-        _localMiaReplies[_localReplyIndex % _localMiaReplies.length];
-    _localReplyIndex++;
 
     final botMsg = ChatMessage(
       id: 'a_${DateTime.now().millisecondsSinceEpoch}',
       isUser: false,
-      text: reply,
+      text: replyText,
       at: DateTime.now(),
     );
     setState(() {
@@ -103,19 +128,16 @@ class _ChatbotViewState extends State<ChatbotView> {
     _scrollToBottom();
   }
 
-  Future<void> _resetChat() async {
+  Future<void> _clearAllChats() async {
     final s = _storage;
     if (s == null) return;
-    await s.clear();
-    final welcome = ChatMessage.welcome();
-    setState(() => _messages = [welcome]);
-    await s.saveMessages(_messages);
+    await s.clearAll();
+    await _startNewSession();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Sohbet sıfırlandı.')),
+        const SnackBar(content: Text('Tüm sohbet geçmişi silindi.')),
       );
     }
-    _scrollToBottom();
   }
 
   void _scrollToBottom() {
@@ -141,18 +163,76 @@ class _ChatbotViewState extends State<ChatbotView> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor:
-          isDarkMode ? const Color(0xFF121421) : Colors.white,
+      backgroundColor: isDarkMode ? const Color(0xFF121421) : Colors.white,
+      drawer: Drawer(
+        backgroundColor: isDarkMode ? const Color(0xFF1C1C2D) : Colors.white,
+        child: Column(
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: BoxDecoration(
+                color: isDarkMode ? const Color(0xFF121421) : Colors.teal.shade50,
+              ),
+              accountName: Text(
+                'Geçmiş Sohbetler',
+                style: TextStyle(
+                  color: isDarkMode ? Colors.white : Colors.teal.shade800,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              accountEmail: null,
+              currentAccountPicture: const CircleAvatar(
+                backgroundColor: Colors.teal,
+                child: Icon(Icons.history, color: Colors.white),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.add, color: Colors.teal),
+              title: const Text('Yeni Sohbet Başlat', style: TextStyle(fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                _startNewSession();
+              },
+            ),
+            const Divider(),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _sessions.length,
+                itemBuilder: (context, index) {
+                  final session = _sessions[index];
+                  final isCurrent = session['id'] == _currentSessionId;
+                  return ListTile(
+                    leading: Icon(Icons.chat_bubble_outline, 
+                      color: isCurrent ? Colors.teal : (isDarkMode ? Colors.white54 : Colors.grey)
+                    ),
+                    title: Text(
+                      session['title'] ?? 'Yeni Sohbet',
+                      style: TextStyle(
+                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
+                        color: isCurrent ? Colors.teal : (isDarkMode ? Colors.white : Colors.black87),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    selected: isCurrent,
+                    selectedTileColor: isDarkMode ? Colors.teal.withOpacity(0.1) : Colors.teal.shade50,
+                    onTap: () {
+                      Navigator.pop(context);
+                      if (!isCurrent) {
+                        _loadSession(session['id']!);
+                      }
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios,
-            color: isDarkMode ? Colors.white70 : Colors.grey,
-          ),
-          onPressed: () => Navigator.of(context).maybePop(),
-        ),
+        iconTheme: IconThemeData(color: isDarkMode ? Colors.white70 : Colors.grey),
         title: Row(
           children: [
             const CircleAvatar(
@@ -166,7 +246,7 @@ class _ChatbotViewState extends State<ChatbotView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Mia',
+                    'Mia (Gemini AI)',
                     style: TextStyle(
                       color: isDarkMode ? Colors.white : Colors.black87,
                       fontSize: 16,
@@ -188,12 +268,17 @@ class _ChatbotViewState extends State<ChatbotView> {
               color: isDarkMode ? Colors.white70 : Colors.black54,
             ),
             onSelected: (v) {
-              if (v == 'reset') _resetChat();
+              if (v == 'clear_all') _clearAllChats();
+              if (v == 'new_chat') _startNewSession();
             },
             itemBuilder: (context) => [
               const PopupMenuItem(
-                value: 'reset',
-                child: Text('Sohbeti sıfırla'),
+                value: 'new_chat',
+                child: Text('Yeni Sohbet'),
+              ),
+              const PopupMenuItem(
+                value: 'clear_all',
+                child: Text('Tüm Geçmişi Sil', style: TextStyle(color: Colors.red)),
               ),
             ],
           ),
@@ -221,18 +306,14 @@ class _ChatbotViewState extends State<ChatbotView> {
                                   height: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
-                                    color: isDarkMode
-                                        ? Colors.white54
-                                        : Colors.teal,
+                                    color: isDarkMode ? Colors.white54 : Colors.teal,
                                   ),
                                 ),
                                 const SizedBox(width: 10),
                                 Text(
-                                  'Mia yazıyor…',
+                                  'Mia düşünüyor...',
                                   style: TextStyle(
-                                    color: isDarkMode
-                                        ? Colors.white54
-                                        : Colors.black54,
+                                    color: isDarkMode ? Colors.white54 : Colors.black54,
                                     fontSize: 13,
                                   ),
                                 ),
@@ -246,27 +327,17 @@ class _ChatbotViewState extends State<ChatbotView> {
                       final isMe = msg.isUser;
 
                       return Align(
-                        alignment:
-                            isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                         child: Column(
-                          crossAxisAlignment: isMe
-                              ? CrossAxisAlignment.end
-                              : CrossAxisAlignment.start,
+                          crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                           children: [
                             Container(
                               margin: const EdgeInsets.only(bottom: 4),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 12,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               decoration: BoxDecoration(
                                 color: isMe
-                                    ? (isDarkMode
-                                        ? const Color(0xFF3B3B5E)
-                                        : const Color(0xFFFFB3FA))
-                                    : (isDarkMode
-                                        ? const Color(0xFF1C1C2D)
-                                        : const Color(0xFFD5F0E6)),
+                                    ? (isDarkMode ? const Color(0xFF3B3B5E) : const Color(0xFFFFB3FA))
+                                    : (isDarkMode ? const Color(0xFF1C1C2D) : const Color(0xFFD5F0E6)),
                                 borderRadius: BorderRadius.only(
                                   topLeft: const Radius.circular(20),
                                   topRight: const Radius.circular(20),
@@ -276,19 +347,12 @@ class _ChatbotViewState extends State<ChatbotView> {
                               ),
                               child: Text(
                                 msg.text,
-                                style: TextStyle(
-                                  color: isDarkMode
-                                      ? Colors.white
-                                      : Colors.black87,
-                                ),
+                                style: TextStyle(color: isDarkMode ? Colors.white : Colors.black87),
                               ),
                             ),
                             Text(
                               msg.timeLabel,
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 10,
-                              ),
+                              style: const TextStyle(color: Colors.grey, fontSize: 10),
                             ),
                             const SizedBox(height: 12),
                           ],
@@ -300,9 +364,7 @@ class _ChatbotViewState extends State<ChatbotView> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDarkMode
-                        ? const Color(0xFF1C1C2D)
-                        : Colors.white,
+                    color: isDarkMode ? const Color(0xFF1C1C2D) : Colors.white,
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.05),
@@ -323,9 +385,7 @@ class _ChatbotViewState extends State<ChatbotView> {
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
-                              color: isDarkMode
-                                  ? const Color(0xFF121421)
-                                  : const Color(0xFFF5F5F5),
+                              color: isDarkMode ? const Color(0xFF121421) : const Color(0xFFF5F5F5),
                               borderRadius: BorderRadius.circular(25),
                             ),
                             child: TextField(

@@ -12,16 +12,11 @@ import '../../../core/theme/app_theme.dart';
 /// `just_audio`). İnternet ve tarayıcı CORS politikası gerekir; web’de ilk oynatma
 /// için kullanıcı etkileşimi (oturumu başlat) genelde şarttır.
 abstract final class _AmbienceUrls {
-  static const rain =
-      'https://assets.mixkit.co/sfx/preview/mixkit-light-rain-loop-2393.mp3';
-  static const forest =
-      'https://assets.mixkit.co/sfx/preview/mixkit-forest-birds-ambience-loop-1252.mp3';
-  static const ocean =
-      'https://assets.mixkit.co/sfx/preview/mixkit-sea-waves-loop-1186.mp3';
-  static const fire =
-      'https://assets.mixkit.co/sfx/preview/mixkit-campfire-crackles-loop-1335.mp3';
-  static const wind =
-      'https://assets.mixkit.co/sfx/preview/mixkit-winter-wind-loop-1174.mp3';
+  static const rain = 'assets/sounds/rain.mp3';
+  static const forest = 'assets/sounds/forest.mp3';
+  static const ocean = 'assets/sounds/ocean.mp3';
+  static const fire = 'assets/sounds/fire.mp3';
+  static const wind = 'assets/sounds/wind.mp3';
 }
 
 class MeditationView extends StatefulWidget {
@@ -108,7 +103,7 @@ class _MeditationViewState extends State<MeditationView>
     if (url == null) return;
     try {
       await _audioPlayer.stop();
-      await _audioPlayer.setUrl(url);
+      await _audioPlayer.setAsset(url);
       await _audioPlayer.setLoopMode(LoopMode.one);
       await _audioPlayer.setVolume(_muted ? 0 : 1);
       await _audioPlayer.play();
@@ -120,7 +115,7 @@ class _MeditationViewState extends State<MeditationView>
             content: Text(
               kIsWeb
                   ? 'Web’de ses açılamadı (ağ / CORS / tarayıcı kısıtı). Diğer platformları deneyin.'
-                  : 'Ses yüklenemedi. İnternet bağlantınızı kontrol edin.',
+                  : 'Yerel ses dosyası bulunamadı veya oynatılamadı. Lütfen IDE konsolundaki "Meditasyon sesi:" hatasını kontrol edin.',
             ),
           ),
         );
