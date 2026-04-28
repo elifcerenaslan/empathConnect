@@ -7,7 +7,10 @@ import 'widgets/bottom_navigation.dart';
 import 'widgets/breathing_exercise_card.dart';
 import '../../diary/view/diary_view.dart';
 import '../../meditation/view/meditation_view.dart';
+// Profil, SOS ve Harita sayfaları eklendi
 import '../../profile/view/profile_view.dart';
+import '../../sos/view/sos_view.dart'; 
+import '../../sos/view/all_points_map_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -17,7 +20,7 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  int _currentIndex = 2; // Home is selected by default
+  int _currentIndex = 2; // Ana sayfa varsayılan olarak seçili
   String _currentQuote = AppConstants.dailyQuotes.first;
 
   @override
@@ -40,22 +43,22 @@ class _HomeViewState extends State<HomeView> {
     });
 
     switch (index) {
-      case 0: // Diary
+      case 0: // Günlük
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => DiaryView()),
+          MaterialPageRoute(builder: (context) => const DiaryView()), 
         ).then((_) {
           setState(() {
-            _currentIndex = 2; // Reset to Home when coming back
+            _currentIndex = 2; 
           });
         });
         break;
-      case 1: // Community
-        // TODO: Navigate to community
+      case 1: // Topluluk
+        // TODO: Topluluk sayfasına yönlendir
         break;
-      case 2: // Home - already here
+      case 2: // Ana Sayfa - Zaten buradayız
         break;
-      case 3: // Meditation
+      case 3: // Meditasyon
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const MeditationView()),
@@ -65,8 +68,15 @@ class _HomeViewState extends State<HomeView> {
           });
         });
         break;
-      case 4: // Map
-        // TODO: Navigate to map
+      case 4: // Harita Butonu
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const AllPointsMapView()),
+        ).then((_) {
+          setState(() {
+            _currentIndex = 2; 
+          });
+        });
         break;
     }
   }
@@ -79,31 +89,46 @@ class _HomeViewState extends State<HomeView> {
           'Ana Sayfa',
           style: Theme.of(context).textTheme.headlineMedium,
         ),
-        leading: IconButton(
-          icon: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary,
-              borderRadius: BorderRadius.circular(16),
+        // --- TAM ORTALANMIŞ VE İÇİ BEYAZ PROFİL İKONU ---
+        leadingWidth: 72, 
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(30),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ProfileView()),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                // Arka planı temanın ana (koyu) rengi yaptık
+                color: Theme.of(context).colorScheme.primary, 
+                shape: BoxShape.circle,
+              ),
+              // İkonu da bembeyaz yaptık!
+              child: const Icon(
+                Icons.person, 
+                color: Colors.white, 
+                size: 28,
+              ),
             ),
-            child: Icon(Icons.account_circle, size: 36, color: Colors.white),
           ),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const ProfileView()),
-            );
-          },
         ),
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 16),
-            child: Container(
+            child: SizedBox(
               width: 100,
               height: 60,
               child: ElevatedButton(
+                // --- SOS BUTONU YÖNLENDİRMESİ ---
                 onPressed: () {
-                  // No functionality for now
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SosView()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
@@ -132,15 +157,15 @@ class _HomeViewState extends State<HomeView> {
           children: [
             QuoteCard(quote: _currentQuote),
             const SizedBox(height: 32),
-            Row(
+            const Row( 
               children: [
                 Expanded(flex: 1, child: EmotionTrackingCard()),
-                const SizedBox(width: 12),
+                SizedBox(width: 12),
                 Expanded(flex: 1, child: BreathingExerciseCard()),
               ],
             ),
             const SizedBox(height: 24),
-            // TODO: Add more home content
+            // TODO: Daha fazla ana sayfa içeriği eklenecek
           ],
         ),
       ),
