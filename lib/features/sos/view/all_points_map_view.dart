@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/providers/sos_provider.dart'; 
+// dart:math kütüphanesini sildik çünkü artık sahte konumlara ihtiyacımız yok!
 
 class AllPointsMapView extends StatelessWidget {
   const AllPointsMapView({super.key});
@@ -38,9 +39,10 @@ class AllPointsMapView extends StatelessWidget {
             userAgentPackageName: 'com.example.empath_connect', 
           ),
           
+          // --- GÜNCELLENEN MARKER LAYER (İĞNELER) KISMI ---
           MarkerLayer(
             markers: [
-              // --- 1. SABİT MERKEZ NOKTASI (Her zaman görünür, senin konumun gibi düşün) ---
+              // 1. SABİT MERKEZ NOKTASI (Senin konumun)
               Marker(
                 point: mapCenter,
                 width: 100,
@@ -61,23 +63,14 @@ class AllPointsMapView extends StatelessWidget {
                 ),
               ),
 
-              // --- 2. DİNAMİK SOS NOKTALARI ---
-              ...sosProvider.points.asMap().entries.map((entry) {
-                int idx = entry.key;
-                var point = entry.value;
+              // 2. FİREBASE'DEN GELEN GERÇEK NOKTALAR
+              // Artık index'e (idx) ihtiyacımız yok, doğrudan noktayı (point) alıyoruz
+              ...sosProvider.points.map((point) {
                 
-                // Noktaları birbiri üstüne binmemesi için daire şeklinde dağıtıyoruz (Matematiksel offset)
-                double offset = 0.008 + (idx * 0.002); // Merkezden uzaklık
-                double angle = idx * 1.5; // Açısı
-                
-                final pointLocation = LatLng(
-                  mapCenter.latitude + (offset * angle.cos()), 
-                  mapCenter.longitude + (offset * angle.sin()),
-                );
-
                 return Marker(
-                  point: pointLocation,
-                  width: 120, // Genişliği biraz artırdık isimler sığsın diye
+                  // YENİ: Doğrudan veritabanındaki latitude ve longitude değerlerini kullanıyoruz
+                  point: LatLng(point.latitude, point.longitude),
+                  width: 120, 
                   height: 80,
                   child: GestureDetector(
                     onTap: () => _makePhoneCall(point.phoneNumber),
