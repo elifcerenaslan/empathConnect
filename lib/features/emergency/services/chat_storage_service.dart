@@ -106,4 +106,22 @@ class ChatStorageService {
     await _prefs.remove(_sessionsKey);
     await _prefs.remove(_currentSessionIdKey);
   }
+
+  Future<void> deleteSession(String sessionId) async {
+    await _prefs.remove('chat_session_$sessionId');
+
+    final sessions = getSessions()..removeWhere((s) => s['id'] == sessionId);
+    final currentSessionId = _prefs.getString(_currentSessionIdKey);
+
+    if (sessions.isEmpty) {
+      await _prefs.remove(_sessionsKey);
+      await _prefs.remove(_currentSessionIdKey);
+      return;
+    }
+
+    await _prefs.setString(_sessionsKey, jsonEncode(sessions));
+    if (currentSessionId == sessionId) {
+      await _prefs.setString(_currentSessionIdKey, sessions.first['id']!);
+    }
+  }
 }

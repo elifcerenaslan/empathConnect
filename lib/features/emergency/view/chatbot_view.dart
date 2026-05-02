@@ -12,6 +12,7 @@ class ChatbotView extends StatefulWidget {
 }
 
 class _ChatbotViewState extends State<ChatbotView> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -128,14 +129,46 @@ class _ChatbotViewState extends State<ChatbotView> {
     _scrollToBottom();
   }
 
-  Future<void> _clearAllChats() async {
+  Future<void> _confirmAndDeleteCurrentChat() async {
     final s = _storage;
-    if (s == null) return;
-    await s.clearAll();
-    await _startNewSession();
+    final currentId = _currentSessionId;
+    if (s == null || currentId == null) return;
+
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sohbeti Sil'),
+        content: const Text('Bu sohbeti silmekten emin misiniz?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Sil', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete != true) return;
+
+    await s.deleteSession(currentId);
+    final nextSessionId = s.createNewSession();
+    final welcome = ChatMessage.welcome();
+    await s.saveMessages(nextSessionId, [welcome]);
+
+    setState(() {
+      _currentSessionId = nextSessionId;
+      _messages = [welcome];
+      _sessions = s.getSessions();
+    });
+    _scrollToBottom();
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tüm sohbet geçmişi silindi.')),
+        const SnackBar(content: Text('Sohbet silindi.')),
       );
     }
   }
@@ -163,8 +196,9 @@ class _ChatbotViewState extends State<ChatbotView> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      key: _scaffoldKey,
       backgroundColor: isDarkMode ? const Color(0xFF121421) : Colors.white,
-      drawer: Drawer(
+      endDrawer: Drawer(
         backgroundColor: isDarkMode ? const Color(0xFF1C1C2D) : Colors.white,
         child: Column(
           children: [
@@ -230,6 +264,14 @@ class _ChatbotViewState extends State<ChatbotView> {
         ),
       ),
       appBar: AppBar(
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: Icon(
+            Icons.close,
+            color: isDarkMode ? Colors.white70 : Colors.black54,
+          ),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: IconThemeData(color: isDarkMode ? Colors.white70 : Colors.grey),
@@ -262,25 +304,13 @@ class _ChatbotViewState extends State<ChatbotView> {
           ],
         ),
         actions: [
-          PopupMenuButton<String>(
+          IconButton(
             icon: Icon(
-              Icons.more_vert,
+              Icons.history,
               color: isDarkMode ? Colors.white70 : Colors.black54,
             ),
-            onSelected: (v) {
-              if (v == 'clear_all') _clearAllChats();
-              if (v == 'new_chat') _startNewSession();
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'new_chat',
-                child: Text('Yeni Sohbet'),
-              ),
-              const PopupMenuItem(
-                value: 'clear_all',
-                child: Text('Tüm Geçmişi Sil', style: TextStyle(color: Colors.red)),
-              ),
-            ],
+            onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
+            tooltip: 'Geçmiş Sohbetler',
           ),
         ],
       ),
@@ -376,9 +406,13 @@ class _ChatbotViewState extends State<ChatbotView> {
                   child: SafeArea(
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.add_circle_outline,
-                          color: isDarkMode ? Colors.white54 : Colors.grey,
+                        IconButton(
+                          onPressed: _confirmAndDeleteCurrentChat,
+                          icon: Icon(
+                            Icons.delete_outline,
+                            color: isDarkMode ? Colors.white70 : Colors.redAccent,
+                          ),
+                          tooltip: 'Bu sohbeti sil',
                         ),
                         const SizedBox(width: 12),
                         Expanded(
