@@ -11,6 +11,7 @@ import '../../meditation/view/meditation_view.dart';
 import '../../profile/view/profile_view.dart';
 import '../../sos/view/sos_view.dart'; 
 import '../../sos/view/all_points_map_view.dart';
+import '../../community/view/community_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({super.key});
@@ -54,7 +55,14 @@ class _HomeViewState extends State<HomeView> {
         });
         break;
       case 1: // Topluluk
-        // TODO: Topluluk sayfasına yönlendir
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const CommunityView()),
+        ).then((_) {
+          setState(() {
+            _currentIndex = 2; 
+          });
+        });
         break;
       case 2: // Ana Sayfa - Zaten buradayız
         break;
