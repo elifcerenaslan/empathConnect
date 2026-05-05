@@ -61,6 +61,11 @@ class AuthService {
     await _auth.signOut();
   }
 
+  // Şifre sıfırlama e-postası gönder
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
+  }
+
   // Firestore'dan kullanıcı detaylarını getir
   Future<UserModel?> getUserDetails(String uid) async {
     try {

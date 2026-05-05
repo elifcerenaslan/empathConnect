@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/post_model.dart';
+import '../../models/comment_model.dart';
 import 'auth_service.dart';
 
 class CommunityService {
@@ -67,6 +68,52 @@ class CommunityService {
       }
     } catch (e) {
       print("Beğeni Hatası: \$e");
+    }
+  }
+
+  // Gönderiye ait yorumları getir
+  Stream<List<CommentModel>> getComments(String postId) {
+    return _firestore
+        .collection('posts')
+        .doc(postId)
+        .collection('comments')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => CommentModel.fromMap(doc.data(), doc.id))
+          .toList();
+    });
+  }
+
+  // Yorum ekle
+  Future<void> addComment(String postId, String text) async {
+    try {
+      final user = _authService.currentUser;
+      if (user == null) throw Exception("Kullanıcı giriş yapmamış.");
+
+      final userDetails = await _authService.getUserDetails(user.uid);
+      
+      final commentRef = _firestore
+          .collection('posts')
+          .doc(postId)
+          .collection('comments')
+          .doc();
+          
+      final newComment = CommentModel(
+        id: commentRef.id,
+        postId: postId,
+        userId: user.uid,
+        username: userDetails?.username ?? 'Bilinmeyen Kullanıcı',
+        userProfileImage: userDetails?.profileImageUrl ?? '',
+        text: text,
+        createdAt: DateTime.now(),
+      );
+
+      await commentRef.set(newComment.toMap());
+    } catch (e) {
+      print("Yorum Ekleme Hatası: \$e");
+      rethrow;
     }
   }
 }
