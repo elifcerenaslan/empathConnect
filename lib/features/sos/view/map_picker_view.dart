@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:geocoding/geocoding.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class MapPickerView extends StatefulWidget {
   const MapPickerView({super.key});
@@ -10,36 +12,17 @@ class MapPickerView extends StatefulWidget {
 }
 
 class _MapPickerViewState extends State<MapPickerView> {
-  LatLng? _pickedLocation;
-  String _pickedAddress = "Haritadan bir nokta seçin";
+  LatLng _selectedLocation = const LatLng(41.018, 28.922); // Başlangıç: İstanbul
+  String _currentAddress = "Konum seçmek için haritaya dokunun";
 
-  // Başlangıç konumu (İstanbul'un merkezi olarak ayarlandı)
-  final LatLng _initialCenter = const LatLng(41.0082, 28.9784);
-
-  // Haritaya tıklandığında çalışacak fonksiyon
-  void _selectLocation(LatLng position) async {
-    setState(() {
-      _pickedLocation = position;
-      _pickedAddress = "Adres çözümleniyor...";
-    });
-
-    try {
-      // Tıklanan koordinatın gerçek hayattaki adresini bul
-      List<Placemark> placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      
-      if (placemarks.isNotEmpty) {
-        final place = placemarks.first;
-        setState(() {
-          // Bulunan sokağı ve ilçeyi yazdır
-          _pickedAddress = "${place.street}, ${place.subLocality}, ${place.administrativeArea}";
-        });
-      }
-    } catch (e) {
+  // Koordinatı adrese çevirme (Reverse Geocoding)
+  Future<void> _getAddress(LatLng location) async {
+    final url = Uri.parse('https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}');
+    final response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
       setState(() {
-        _pickedAddress = "Koordinat: ${position.latitude.toStringAsFixed(4)}, ${position.longitude.toStringAsFixed(4)}";
+        _currentAddress = data['display_name'] ?? "Bilinmeyen Adres";
       });
     }
   }
@@ -47,50 +30,53 @@ class _MapPickerViewState extends State<MapPickerView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Konum Seç'),
-        actions: [
-          // Eğer bir nokta seçildiyse SAĞ ÜSTTE ONAY BUTONU çıkar
-          if (_pickedLocation != null)
-            IconButton(
-              icon: const Icon(Icons.check, size: 30),
-              onPressed: () {
-                // Seçilen adresi alıp bir önceki sayfaya (SosView'a) geri gönder
-                Navigator.pop(context, _pickedAddress);
+      appBar: AppBar(title: const Text("Konum Seç")),
+      body: Stack(
+        children: [
+          FlutterMap(
+            options: MapOptions(
+              initialCenter: _selectedLocation,
+              initialZoom: 13.0,
+              onTap: (tapPosition, point) {
+                setState(() {
+                  _selectedLocation = point;
+                });
+                _getAddress(point);
               },
             ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            // --- GOOGLE HARİTALAR VİTGENİ ---
-            child: GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: _initialCenter,
-                zoom: 13,
+            children: [
+              TileLayer(urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'),
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: _selectedLocation,
+                    child: const Icon(Icons.location_on, color: Colors.red, size: 45),
+                  ),
+                ],
               ),
-              onTap: _selectLocation, // Tıklayınca fonksiyonu çalıştır
-              // Eğer seçili nokta varsa oraya kırmızı bir iğne (Marker) batır
-              markers: _pickedLocation == null
-                  ? {}
-                  : {
-                      Marker(
-                        markerId: const MarkerId('secilen_nokta'),
-                        position: _pickedLocation!,
-                      ),
-                    },
-            ),
+            ],
           ),
-          // --- ALT TARAFTAKİ BİLGİ ÇUBUĞU ---
-          Container(
-            padding: const EdgeInsets.all(20),
-            width: double.infinity,
-            color: Theme.of(context).colorScheme.surfaceVariant,
-            child: Text(
-              _pickedAddress,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
+          Positioned(
+            bottom: 20, left: 20, right: 20,
+            child: Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(_currentAddress, textAlign: TextAlign.center),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, {
+                        'address': _currentAddress,
+                        'lat': _selectedLocation.latitude,
+                        'lon': _selectedLocation.longitude,
+                      }),
+                      child: const Text("Bu Konumu Seç"),
+                    )
+                  ],
+                ),
+              ),
             ),
           ),
         ],

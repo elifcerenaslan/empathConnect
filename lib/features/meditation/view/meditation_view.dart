@@ -28,18 +28,17 @@ class MeditationView extends StatefulWidget {
 
 class _MeditationViewState extends State<MeditationView>
     with TickerProviderStateMixin {
-  static const int _totalSessionSeconds = 4 * 60 + 12;
+  int _totalSessionSeconds = 4 * 60;
 
   late AnimationController _breathController;
   final AudioPlayer _audioPlayer = AudioPlayer();
   Ticker? _sessionCountdownTicker;
 
-  bool _vibrationOn = true;
   bool _wasExhaling = false;
   bool _sessionActive = false;
   bool _muted = false;
 
-  int _remainingSeconds = _totalSessionSeconds;
+  late int _remainingSeconds = _totalSessionSeconds;
 
   String selectedSound = 'Yağmur';
 
@@ -85,9 +84,6 @@ class _MeditationViewState extends State<MeditationView>
     if (!_sessionActive) return;
     final v = _breathController.value;
     final isExhaling = v > 0.5;
-    if (_vibrationOn && isExhaling && !_wasExhaling) {
-      HapticFeedback.mediumImpact();
-    }
     _wasExhaling = isExhaling;
   }
 
@@ -170,9 +166,13 @@ class _MeditationViewState extends State<MeditationView>
       _sessionActive = false;
       _remainingSeconds = _totalSessionSeconds;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Meditasyon süresi tamamlandı.')),
-    );
+
+    try {
+      await _audioPlayer.setAsset('assets/sounds/ding.mp3');
+      await _audioPlayer.setLoopMode(LoopMode.off);
+      await _audioPlayer.setVolume(_muted ? 0 : 1);
+      await _audioPlayer.play();
+    } catch (_) {}
   }
 
   Future<void> _teardownPlayback() async {
@@ -189,6 +189,62 @@ class _MeditationViewState extends State<MeditationView>
       _remainingSeconds = _totalSessionSeconds;
     });
     Navigator.of(context).maybePop();
+  }
+
+  Future<void> _stopSession() async {
+    await _teardownPlayback();
+    if (!mounted) return;
+    setState(() {
+      _sessionActive = false;
+      _remainingSeconds = _totalSessionSeconds;
+    });
+  }
+
+  void _showTimePicker() {
+    if (_sessionActive) return;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          height: 300,
+          decoration: BoxDecoration(
+            color: isDarkMode ? const Color(0xFF1C1C2D) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(
+                  'Meditasyon Süresi (Dakika)',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: 60,
+                  itemBuilder: (context, index) {
+                    final minutes = index + 1;
+                    return ListTile(
+                      title: Text('$minutes Dakika', textAlign: TextAlign.center),
+                      onTap: () {
+                        setState(() {
+                          _totalSessionSeconds = minutes * 60;
+                          _remainingSeconds = _totalSessionSeconds;
+                        });
+                        Navigator.pop(context);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _toggleMute() async {
@@ -240,13 +296,6 @@ class _MeditationViewState extends State<MeditationView>
     final subtle = isDarkMode
         ? AppTheme.meditationTextMutedDark
         : AppTheme.meditationTextMutedLight;
-
-    final endBg = isDarkMode
-        ? AppTheme.meditationEndButtonBackgroundDark
-        : AppTheme.meditationEndButtonBackgroundLight;
-    final endFg = isDarkMode
-        ? AppTheme.meditationEndButtonForegroundDark
-        : AppTheme.meditationEndButtonForegroundLight;
 
     final (minStr, secStr) = _timerDigits();
 
@@ -300,6 +349,7 @@ class _MeditationViewState extends State<MeditationView>
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            SizedBox(height: MediaQuery.of(context).size.height * 0.06),
             AnimatedBuilder(
               animation: _breathController,
               builder: (context, child) {
@@ -324,8 +374,8 @@ class _MeditationViewState extends State<MeditationView>
                     const SizedBox(height: 8),
                     Text(
                       _sessionActive
-                          ? 'Sakinleşmek için ritmi izle.'
-                          : 'Meditasyonu başlatmak için aşağıdaki butona dokun.',
+                          ? 'Durdurmak için dokun'
+                          : 'Başlatmak için dokun',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 15,
@@ -333,120 +383,67 @@ class _MeditationViewState extends State<MeditationView>
                         color: subtle,
                       ),
                     ),
-                    const SizedBox(height: 28),
-                    Transform.scale(
-                      scale: scale,
-                      child: child,
+                    const SizedBox(height: 56),
+                    GestureDetector(
+                      onTap: () {
+                        if (_sessionActive) {
+                          _stopSession();
+                        } else {
+                          _startSession();
+                        }
+                      },
+                      child: Transform.scale(
+                        scale: scale,
+                        child: child,
+                      ),
                     ),
                   ],
                 );
               },
               child: _BreathOrb(isDarkMode: isDarkMode),
             ),
-            const SizedBox(height: 28),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _TimerBox(
-                  value: minStr,
-                  label: 'DAKİKA',
-                  isDarkMode: isDarkMode,
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 6),
-                  child: Text(
-                    ':',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w300,
-                      color: AppTheme.meditationTimerSeparator,
-                      height: 1.2,
+            const SizedBox(height: 56),
+            GestureDetector(
+              onTap: _showTimePicker,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _TimerBox(
+                    value: minStr,
+                    label: 'DAKİKA',
+                    isDarkMode: isDarkMode,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    child: Text(
+                      ':',
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w300,
+                        color: AppTheme.meditationTimerSeparator,
+                        height: 1.2,
+                      ),
                     ),
                   ),
-                ),
-                _TimerBox(
-                  value: secStr,
-                  label: 'SANİYE',
-                  isDarkMode: isDarkMode,
-                ),
-              ],
+                  _TimerBox(
+                    value: secStr,
+                    label: 'SANİYE',
+                    isDarkMode: isDarkMode,
+                  ),
+                ],
+              ),
             ),
             if (!_sessionActive) ...[
               const SizedBox(height: 8),
               Text(
-                'Süre: ${_formatClock(_totalSessionSeconds)}',
+                'Süreyi değiştirmek için dokunun',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 13, color: subtle),
               ),
             ],
             const SizedBox(height: 28),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: isDarkMode
-                    ? AppTheme.meditationCardSurfaceDark
-                    : AppTheme.meditationCardSurfaceLight,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.06),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: isDarkMode
-                          ? AppTheme.meditationVibrationCircleDark
-                          : AppTheme.meditationVibrationCircleLight,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      Icons.vibration_rounded,
-                      color: AppTheme.meditationSwitchTrackActive,
-                      size: 22,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Titreşim',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: foreground,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Nefes verirken titret',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: subtle,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Switch.adaptive(
-                    value: _vibrationOn,
-                    activeColor: AppTheme.meditationSwitchThumb,
-                    activeTrackColor: AppTheme.meditationSwitchTrackActive,
-                    onChanged: (on) {
-                      setState(() => _vibrationOn = on);
-                    },
-                  ),
-                ],
-              ),
-            ),
+
             const SizedBox(height: 32),
             Text(
               'Rahatlatıcı Sesler',
@@ -526,45 +523,7 @@ class _MeditationViewState extends State<MeditationView>
                 },
               ),
             ),
-            const SizedBox(height: 16),
-            if (!_sessionActive)
-              FilledButton(
-                onPressed: _startSession,
-                style: FilledButton.styleFrom(
-                  backgroundColor: scheme.primary,
-                  foregroundColor: scheme.onPrimary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: const Text(
-                  'Oturumu Başlat',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              )
-            else
-              FilledButton(
-                onPressed: _endSessionAndLeave,
-                style: FilledButton.styleFrom(
-                  backgroundColor: endBg,
-                  foregroundColor: endFg,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: const Text(
-                  'Oturumu Bitir',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+
             const SizedBox(height: 24),
           ],
         ),
@@ -639,8 +598,8 @@ class _BreathOrb extends StatelessWidget {
               ),
             ),
             child: Icon(
-              Icons.eco_rounded,
-              size: 52,
+              Icons.air,
+              size: 64,
               color: isDarkMode
                   ? AppTheme.meditationBreathLeafDark
                   : AppTheme.meditationBreathLeafLight,

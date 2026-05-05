@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/providers/theme_provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -62,6 +63,7 @@ class _ProfileViewState extends State<ProfileView> {
   }
 
   // --- DİALOG PENCERELERİ ---
+ // --- YENİ: FİREBASE BAĞLANTILI KULLANICI ADI DEĞİŞTİRME ---
   void _showUsernameChangeDialog() {
     final TextEditingController controller = TextEditingController(text: _username);
     showDialog(
@@ -75,10 +77,37 @@ class _ProfileViewState extends State<ProfileView> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal")),
           ElevatedButton(
-            onPressed: () {
-              setState(() { _username = controller.text; });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Kullanıcı adı güncellendi!")));
+            // YENİ: İşlem internete gideceği için 'async' (beklemeli) yaptık
+            onPressed: () async {
+              try {
+                // 1. Firebase'deki mevcut kullanıcıyı bul
+                final user = FirebaseAuth.instance.currentUser;
+                
+                // 2. Eğer kullanıcı giriş yapmışsa, ismini Firebase'de güncelle
+                if (user != null) {
+                  await user.updateDisplayName(controller.text);
+                }
+
+                // 3. Ekranda görünen yazıyı da anında güncelle
+                setState(() { 
+                  _username = controller.text; 
+                });
+                
+                // 4. Pencereyi kapat ve başarı mesajı göster
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("Harika! Yeni ismin Firebase'e kaydedildi.")),
+                  );
+                }
+              } catch (e) {
+                // Eğer internet kopuksa veya hata varsa kullanıcıya haber ver
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Bir hata oluştu: $e")),
+                  );
+                }
+              }
             }, 
             child: const Text("Kaydet")
           ),
@@ -87,6 +116,7 @@ class _ProfileViewState extends State<ProfileView> {
     );
   }
 
+  // --- FİREBASE BAĞLANTILI E-POSTA DEĞİŞTİRME ---
   void _showEmailChangeDialog() {
     final TextEditingController controller = TextEditingController(text: _email);
     showDialog(
@@ -101,10 +131,32 @@ class _ProfileViewState extends State<ProfileView> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal")),
           ElevatedButton(
-            onPressed: () {
-              setState(() { _email = controller.text; });
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("E-Posta güncellendi!")));
+            onPressed: () async {
+              try {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
+                  // Firebase'de e-postayı güncelle
+                  await user.verifyBeforeUpdateEmail(controller.text);
+                  
+                  setState(() { _email = controller.text; });
+                  
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("E-posta güncelleme isteği gönderildi. Lütfen yeni adresinizi doğrulayın.")),
+                    );
+                  }
+                }
+              } on FirebaseAuthException catch (e) {
+                // Eğer uzun süredir giriş yapılmamışsa 'requires-recent-login' hatası döner
+                String message = e.code == 'requires-recent-login' 
+                  ? "Güvenlik nedeniyle yeniden giriş yapmanız gerekiyor." 
+                  : "Hata: ${e.message}";
+                
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+                }
+              }
             }, 
             child: const Text("Kaydet")
           ),
@@ -113,27 +165,45 @@ class _ProfileViewState extends State<ProfileView> {
     );
   }
 
+  // --- FİREBASE BAĞLANTILI ŞİFRE DEĞİŞTİRME ---
   void _showPasswordChangeDialog() {
+    final TextEditingController controller = TextEditingController();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text("Şifre Değiştir"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(obscureText: true, decoration: const InputDecoration(labelText: "Mevcut Şifre")),
-            const SizedBox(height: 8),
-            TextField(obscureText: true, decoration: const InputDecoration(labelText: "Yeni Şifre")),
-          ],
+        content: TextField(
+          controller: controller,
+          obscureText: true,
+          decoration: const InputDecoration(labelText: "Yeni Şifre"),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal")),
           ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Şifreniz güncellendi!")));
+            onPressed: () async {
+              try {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
+                  await user.updatePassword(controller.text);
+                  
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Şifreniz başarıyla değiştirildi.")),
+                    );
+                  }
+                }
+              } on FirebaseAuthException catch (e) {
+                String message = e.code == 'weak-password' 
+                  ? "Şifre çok zayıf." 
+                  : "Hata: ${e.message}";
+                
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+                }
+              }
             }, 
-            child: const Text("Kaydet")
+            child: const Text("Güncelle")
           ),
         ],
       ),

@@ -1,59 +1,124 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import 'package:empath_connect/core/providers/sos_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../core/providers/sos_provider.dart'; 
+// dart:math kütüphanesini sildik çünkü artık sahte konumlara ihtiyacımız yok!
 
 class AllPointsMapView extends StatelessWidget {
   const AllPointsMapView({super.key});
 
+  Future<void> _makePhoneCall(String phoneNumber) async {
+    final Uri telUrl = Uri.parse("tel:${phoneNumber.replaceAll(' ', '')}");
+    if (await canLaunchUrl(telUrl)) {
+      await launchUrl(telUrl);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    // SOS noktalarını (Hastane, Polis, Annem vb.) provider'dan izliyoruz
     final sosProvider = context.watch<SosProvider>();
     
+    // Haritanın açılacağı merkez nokta (İstanbul)
+    final LatLng mapCenter = const LatLng(41.018, 28.922);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Güvenli Noktalar Haritası"),
+        title: const Text("Yakındaki Güvenli Noktalar"),
+        centerTitle: true,
       ),
-      body: Stack(
+      body: FlutterMap(
+        options: MapOptions(
+          initialCenter: mapCenter, 
+          initialZoom: 13.0, // Başlangıç yakınlığı (Sokak seviyesi)
+        ),
         children: [
-          // Harita simülasyonu zemini
-          Container(
-            color: Colors.grey[200],
-            child: const Center(
-              child: Icon(Icons.map_outlined, size: 150, color: Colors.grey),
-            ),
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.example.empath_connect', 
           ),
           
-          // Listedeki her nokta için bir iğne (Marker) oluşturuyoruz
-          ...sosProvider.points.asMap().entries.map((entry) {
-            int idx = entry.key;
-            var point = entry.value;
-            
-            return Positioned(
-              // Noktaları ekrana farklı yerlere dağıtıyoruz
-              top: 120.0 + (idx * 100), 
-              left: 70.0 + (idx * 40),
-              child: Column(
-                children: [
-                  const Icon(Icons.location_on, color: Colors.red, size: 45),
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: const [BoxShadow(blurRadius: 4, color: Colors.black26)],
+          // --- GÜNCELLENEN MARKER LAYER (İĞNELER) KISMI ---
+          MarkerLayer(
+            markers: [
+              // 1. SABİT MERKEZ NOKTASI (Senin konumun)
+              Marker(
+                point: mapCenter,
+                width: 100,
+                height: 80,
+                child: Column(
+                  children: [
+                    const Icon(Icons.person_pin_circle, color: Colors.blue, size: 45),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.blue, width: 1),
+                      ),
+                      child: const Text("Sen", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
                     ),
-                    child: Text(
-                      point.name, 
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)
+                  ],
+                ),
+              ),
+
+              // 2. FİREBASE'DEN GELEN GERÇEK NOKTALAR
+              // Artık index'e (idx) ihtiyacımız yok, doğrudan noktayı (point) alıyoruz
+              ...sosProvider.points.map((point) {
+                
+                return Marker(
+                  // YENİ: Doğrudan veritabanındaki latitude ve longitude değerlerini kullanıyoruz
+                  point: LatLng(point.latitude, point.longitude),
+                  width: 120, 
+                  height: 80,
+                  child: GestureDetector(
+                    onTap: () => _makePhoneCall(point.phoneNumber),
+                    child: Column(
+                      children: [
+                        const Icon(Icons.location_on, color: Colors.red, size: 40),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: const [BoxShadow(blurRadius: 3, color: Colors.black26)],
+                          ),
+                          child: Text(
+                            point.name,
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold),
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            );
-          }).toList(),
+                );
+              }).toList(),
+            ],
+          ),
         ],
       ),
+      
+      floatingActionButton: Card(
+        margin: const EdgeInsets.all(16),
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.info_outline, color: Colors.blue),
+              const SizedBox(width: 8),
+              Text(
+                "${sosProvider.points.length} destek noktası bulundu.\nAramak için iğnelere dokunun.",
+                style: TextStyle(color: Colors.grey[800], fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }
