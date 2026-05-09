@@ -93,7 +93,7 @@ class _RegisterViewState extends State<RegisterView>
       // AuthWrapper otomatik yönlendirir
     } catch (e) {
       if (!mounted) return;
-      String errorMessage = 'Kayıt başarısız. Lütfen tekrar deneyin.';
+      String errorMessage = e.toString(); // Firebase'in gerçek hatasını ekrana yansıtıyoruz
       final errorStr = e.toString();
       if (errorStr.contains('email-already-in-use')) {
         errorMessage = 'Bu e-posta adresi zaten kullanımda.';
@@ -102,6 +102,10 @@ class _RegisterViewState extends State<RegisterView>
       } else if (errorStr.contains('invalid-email')) {
         errorMessage = 'Geçersiz e-posta adresi.';
       }
+      
+      // Hatanın detayını konsola da yazdıralım
+      print('Register Error: \$errorStr');
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(

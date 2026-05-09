@@ -71,7 +71,7 @@ class _LoginViewState extends State<LoginView>
       // buraya ulaşılmaz ama mounted kontrolü güvenlik için.
     } catch (e) {
       if (!mounted) return;
-      String errorMessage = 'Giriş başarısız. Bilgilerinizi kontrol edin.';
+      String errorMessage = e.toString(); // Firebase'in gerçek hatasını ekrana yansıtıyoruz
       final errorStr = e.toString();
       if (errorStr.contains('user-not-found')) {
         errorMessage = 'Bu e-posta ile kayıtlı kullanıcı bulunamadı.';
@@ -81,6 +81,10 @@ class _LoginViewState extends State<LoginView>
       } else if (errorStr.contains('too-many-requests')) {
         errorMessage = 'Çok fazla deneme. Lütfen biraz bekleyin.';
       }
+      
+      // Hatanın detayını konsola da yazdıralım
+      print('Login Error: \$errorStr');
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
