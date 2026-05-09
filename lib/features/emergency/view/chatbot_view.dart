@@ -63,7 +63,14 @@ class _ChatbotViewState extends State<ChatbotView> {
     if (_storage == null) return;
     setState(() => _loadingHistory = true);
     _storage!.setCurrentSessionId(sessionId);
-    final loaded = _storage!.loadMessages(sessionId);
+    var loaded = _storage!.loadMessages(sessionId);
+    
+    // Eğer sohbet tamamen boşsa (yeni başlatılmışsa) ilk selamlama mesajını ekle
+    if (loaded.isEmpty) {
+      loaded = [ChatMessage.welcome()];
+      await _storage!.saveMessages(sessionId, loaded);
+    }
+
     setState(() {
       _currentSessionId = sessionId;
       _messages = loaded;
