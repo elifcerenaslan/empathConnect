@@ -9,9 +9,11 @@ import 'core/providers/theme_provider.dart';
 import 'features/home/view/home_view.dart';
 import 'features/auth/view/login_view.dart';
 import 'core/services/auth_service.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp();
   runApp(const EmpathConnectApp());
 }
