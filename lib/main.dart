@@ -13,7 +13,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await dotenv.load(fileName: ".env");
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    print("Env dosyası yüklenemedi (veya boş): \$e");
+  }
   await Firebase.initializeApp();
   runApp(const EmpathConnectApp());
 }
