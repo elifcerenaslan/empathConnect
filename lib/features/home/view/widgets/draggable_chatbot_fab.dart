@@ -59,7 +59,7 @@ class _DraggableChatbotFabState extends State<DraggableChatbotFab> {
           setState(() {
             double newDx = position.dx + details.delta.dx;
             double newDy = position.dy + details.delta.dy;
-            
+
             // Sınırları aşmasını engelle
             if (newDx < 0) newDx = 0;
             if (newDx > size.width - 70) newDx = size.width - 70;
@@ -97,9 +97,9 @@ class _DraggableChatbotFabState extends State<DraggableChatbotFab> {
             children: [
               Icon(Icons.chat, size: 24, color: Theme.of(context).colorScheme.onPrimary),
               Text(
-                'Chat', 
+                'Chat',
                 style: TextStyle(
-                  fontSize: 10, 
+                  fontSize: 10,
                   color: Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
