@@ -73,9 +73,9 @@ Projeyi kendi bilgisayarınızda derleyip çalıştırmak için aşağıdaki ad�
 ## 📱 Ekran Görüntüleri 
 *(Geliştirici Notu: Projeyi GitHub'a yüklerken, `assets/screenshots/` klasörü altına uygulamanızın ekran görüntülerini ekleyip buraya linkleyebilirsiniz.)*
 
-| Chatbot (Mia) | Meditasyon Ekranı | Topluluk | SOS Haritası |
+| Chatbot (Mia) | Meditasyon Ekranı | Günlük | SOS Haritası |
 | :---: | :---: | :---: | :---: |
-| <img src="https://github.com/user-attachments/assets/81428b49-a982-48f5-adaa-a15b03bd625c" width="200"/> | <img src="https://github.com/user-attachments/assets/20d85a20-414e-444f-bff4-70a729c85ac4" width="200"/> | <img src="https://github.com/user-attachments/assets/29fff744-d12e-4b54-8919-fa5acde6bb50" width="200"/> | <img src="https://github.com/user-attachments/assets/9524276d-6563-4ec3-acb7-fd45da39bd59" width="200"/> | <img src="https://github.com/user-attachments/assets/a5a7e02b-1a3c-4b65-838d-43fab804ecc0" width="200"/> | <img src="https://github.com/user-attachments/assets/12cc069e-4215-4714-abf4-c8c20a99d457" width="200"/> | 
+| <img src="https://github.com/user-attachments/assets/b99dd032-92af-4582-a478-761974ee9511" width="200"/> | <img src="https://github.com/user-attachments/assets/c14013d3-3588-418d-8d7b-0c5989c76b13" width="200"/> | <img src="https://github.com/user-attachments/assets/cf612d8c-8e4e-4dec-bd0e-f4440f691f4b" width="200"/> | <img src="https://github.com/user-attachments/assets/5c33a6da-59d9-4d68-99f0-1180b46f8626" width="200"/> | 
 
 ---
 
