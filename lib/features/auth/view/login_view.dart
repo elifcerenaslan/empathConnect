@@ -229,7 +229,7 @@ class _LoginViewState extends State<LoginView>
                     ),
                     const SizedBox(height: 20),
                     Text(
-                      'EmpathConnect',
+                      'Koza',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w800,

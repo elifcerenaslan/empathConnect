@@ -1,6 +1,6 @@
-# 🌟 EmpathConnect
+# 🌟 Koza
 
-**EmpathConnect**, kullanıcıların psikolojik destek bulabileceği, stresle başa çıkabileceği ve güvenli bir toplulukta içini dökebileceği yapay zeka destekli yenilikçi bir mobil uygulamadır. 
+**Koza**, kullanıcıların psikolojik destek bulabileceği, stresle başa çıkabileceği ve güvenli bir toplulukta içini dökebileceği yapay zeka destekli yenilikçi bir mobil uygulamadır. 
 
 Yapay zeka asistanı **Mia** ile dilediğiniz an konuşabilir, interaktif meditasyon seanslarıyla rahatlayabilir veya yakınınızdaki acil durum destek noktalarına (SOS) tek tıkla ulaşabilirsiniz.
 
@@ -24,7 +24,7 @@ Acil psikolojik veya fiziksel destek ihtiyaçları için, Google Maps entegrasyo
 
 ## 🛠️ Kullanılan Teknolojiler
 
-EmpathConnect, modern ve kararlı bir mobil uygulama mimarisi ile geliştirilmiştir:
+Koza, modern ve kararlı bir mobil uygulama mimarisi ile geliştirilmiştir:
 
 - **Framework:** Flutter (Dart)
 - **State Management:** Provider
@@ -82,4 +82,4 @@ Projeyi kendi bilgisayarınızda derleyip çalıştırmak için aşağıdaki ad�
 ## 🤝 Katkıda Bulunma
 Bu proje geliştirilmeye açıktır! Hata bildirimleri (Issue) açabilir veya yeni özellikler eklemek için Pull Request (PR) gönderebilirsiniz. 
 
-**EmpathConnect** ile kimse yalnız değildir. 💙
+**Koza** ile kimse yalnız değildir. 💙
