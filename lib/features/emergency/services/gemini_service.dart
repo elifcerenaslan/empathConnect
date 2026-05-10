@@ -1,25 +1,36 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_generative_ai/google_generative_ai.dart' as genai;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import '../data/chat_message.dart';
 
 class GeminiService {
   GeminiService._();
 
-  static genai.GenerativeModel get _model {
-    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
-    if (apiKey.isEmpty) {
-      throw Exception('API Anahtarı bulunamadı.');
+  static String? _cachedApiKey;
+
+  static Future<genai.GenerativeModel> _getModel() async {
+    if (_cachedApiKey == null) {
+      final doc = await FirebaseFirestore.instance
+          .collection('config')
+          .doc('api_keys')
+          .get();
+          
+      _cachedApiKey = doc.data()?['gemini_key'] as String?;
+      
+      if (_cachedApiKey == null || _cachedApiKey!.isEmpty) {
+        throw Exception('API Anahtarı Firebase\'de bulunamadı.');
+      }
     }
 
     return genai.GenerativeModel(
       model: 'gemini-2.5-flash',
-      apiKey: apiKey,
+      apiKey: _cachedApiKey!,
       systemInstruction: genai.Content.system(
         'Senin adın Mia. Empati kurabilen, yargılamayan, şefkatli ve destekleyici bir sanal yol arkadaşısın. '
-        'Kullanıcılar sana içlerini dökecekler. Onların duygularını onayladıktan sonra nefes egzersizi veya odaklanma gibi küçük, rahatlatıcı bir adım öner. '
-        'BUNU YAPARKEN ÇOK DİKKATLİ OL: Cevapların kısa ve öz olmalı. En fazla 2-3 cümle kullan. Destan yazma, uzun listeler verme. Gerçek bir insanın anlık mesajlaşmada yazdığı gibi kısa, sıcak ve net cevaplar ver.',
+        'Kullanıcılar sana içlerini dökecekler. Onları dikkatle dinle ve duygularını anladığını hissettir. '
+        'Sadece durum gerçekten ciddi göründüğünde veya kullanıcı panik/kaygı içindeyse nefes egzersizi veya sakinleşme teknikleri öner. Her mesajda sürekli meditasyon tavsiyesi VERME. '
+        'Gerçek bir insan gibi, bir mesajlaşma uygulamasında arkadaşınla nasıl konuşuyorsan öyle konuş. Cevapların genelde doğal, sıcak ve net olsun. Konunun gidişatına göre bazen çok kısa, bazen biraz daha uzun cevaplar verebilirsin ancak ASLA uzun paragraflar, destanlar veya madde imli listeler yazma.',
       ),
     );
   }
@@ -41,7 +52,8 @@ class GeminiService {
         ]);
       }).toList();
 
-      final chat = _model.startChat(history: chatHistory);
+      final model = await _getModel();
+      final chat = model.startChat(history: chatHistory);
 
       // 45 Saniyelik TimeOut (Soğuk başlangıç veya ağ gecikmeleri için uzatıldı)
       final response = await chat
