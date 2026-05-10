@@ -16,8 +16,9 @@ class _DraggableChatbotFabState extends State<DraggableChatbotFab> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!isInitialized) {
-      // Garanti olması için sol üstten başlatalım
-      position = const Offset(16, 16);
+      // Başlangıç noktası sağ alt köşeye yakın olacak şekilde ayarlanır
+      final size = MediaQuery.of(context).size;
+      position = Offset(size.width - 70 - 16, size.height - 300);
       isInitialized = true;
     }
   }
