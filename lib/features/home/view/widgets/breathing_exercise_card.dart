@@ -16,7 +16,8 @@ class BreathingExerciseCard extends StatelessWidget {
           );
         },
         borderRadius: BorderRadius.circular(16),
-        child: Padding(
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 160),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -35,7 +36,7 @@ class BreathingExerciseCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.headlineSmall
                           ?.copyWith(
                             fontWeight: FontWeight.normal,
-                            fontSize: 18, // Küçültülmüş font
+                            fontSize: 20, // Küçültülmüş font
                           ),
                     ),
                   ),
@@ -47,6 +48,7 @@ class BreathingExerciseCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.outline,
                   fontWeight: FontWeight.normal,
+                  fontSize: 16,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -59,6 +61,7 @@ class BreathingExerciseCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Color(0xFFCFF1EF), // En açık renk
                       fontWeight: FontWeight.w600,
+                      fontSize: 16,
                     ),
                   ),
                   const SizedBox(width: 4),

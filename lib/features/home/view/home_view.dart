@@ -1,10 +1,13 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_constants.dart';
 import 'widgets/quote_card.dart';
 import 'widgets/emotion_tracking_card.dart';
-import 'widgets/chatbot_fab.dart';
+import 'widgets/draggable_chatbot_fab.dart';
 import 'widgets/bottom_navigation.dart';
 import 'widgets/breathing_exercise_card.dart';
+import 'widgets/community_latest_card.dart';
 import '../../diary/view/diary_view.dart';
 import '../../meditation/view/meditation_view.dart';
 // Profil, SOS ve Harita sayfaları eklendi
@@ -30,11 +33,50 @@ class _HomeViewState extends State<HomeView> {
     _setDailyQuote();
   }
 
-  void _setDailyQuote() {
+  Future<void> _setDailyQuote() async {
+    final prefs = await SharedPreferences.getInstance();
     final quotes = AppConstants.dailyQuotes;
-    final dailyQuote = quotes[(DateTime.now().day) % quotes.length];
+    
+    final todayStr = "${DateTime.now().year}-${DateTime.now().month}-${DateTime.now().day}";
+    final lastQuoteDate = prefs.getString('last_quote_date');
+    
+    List<String>? shuffledIndices = prefs.getStringList('shuffled_quote_indices');
+    int currentIndex = prefs.getInt('quote_current_index') ?? 0;
+
+    // Eğer henüz karıştırılmış liste yoksa veya liste eksik/hatalıysa
+    if (shuffledIndices == null || shuffledIndices.isEmpty || shuffledIndices.length != quotes.length) {
+      final list = List<int>.generate(quotes.length, (i) => i);
+      list.shuffle(Random());
+      shuffledIndices = list.map((e) => e.toString()).toList();
+      currentIndex = 0;
+      await prefs.setStringList('shuffled_quote_indices', shuffledIndices);
+      await prefs.setInt('quote_current_index', currentIndex);
+    }
+
+    // Eğer bugün yeni bir günse, sıradaki söze geç
+    if (lastQuoteDate != todayStr) {
+      if (lastQuoteDate != null) {
+        currentIndex++;
+      }
+      
+      // Liste bittiyse yeniden karıştır ve başa dön
+      if (currentIndex >= shuffledIndices.length) {
+        final list = List<int>.generate(quotes.length, (i) => i);
+        list.shuffle(Random());
+        shuffledIndices = list.map((e) => e.toString()).toList();
+        currentIndex = 0;
+        await prefs.setStringList('shuffled_quote_indices', shuffledIndices);
+      }
+      
+      await prefs.setInt('quote_current_index', currentIndex);
+      await prefs.setString('last_quote_date', todayStr);
+    }
+
+    // Seçili sözü al
+    int quoteIndex = int.parse(shuffledIndices[currentIndex]);
+    
     setState(() {
-      _currentQuote = dailyQuote;
+      _currentQuote = quotes[quoteIndex];
     });
   }
 
@@ -158,31 +200,36 @@ class _HomeViewState extends State<HomeView> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            QuoteCard(quote: _currentQuote),
-            const SizedBox(height: 32),
-            const Row( 
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(flex: 1, child: EmotionTrackingCard()),
-                SizedBox(width: 12),
-                Expanded(flex: 1, child: BreathingExerciseCard()),
+                QuoteCard(quote: _currentQuote),
+                const SizedBox(height: 32),
+                const Row( 
+                  children: [
+                    Expanded(flex: 1, child: EmotionTrackingCard()),
+                    SizedBox(width: 12),
+                    Expanded(flex: 1, child: BreathingExerciseCard()),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const CommunityLatestCard(),
+                const SizedBox(height: 24),
+                // TODO: Daha fazla ana sayfa içeriği eklenecek
               ],
             ),
-            const SizedBox(height: 24),
-            // TODO: Daha fazla ana sayfa içeriği eklenecek
-          ],
-        ),
+          ),
+          const DraggableChatbotFab(),
+        ],
       ),
       bottomNavigationBar: BottomNavigation(
         currentIndex: _currentIndex,
         onTap: _onBottomNavTap,
       ),
-      floatingActionButton: const ChatbotFab(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
     );
   }
 }

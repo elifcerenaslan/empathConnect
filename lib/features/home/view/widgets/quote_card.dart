@@ -9,8 +9,8 @@ class QuoteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(32),
+        constraints: const BoxConstraints(minHeight: 160),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
           gradient: LinearGradient(
@@ -38,7 +38,7 @@ class QuoteCard extends StatelessWidget {
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: Theme.of(context).colorScheme.onPrimary,
                     fontWeight: FontWeight.normal,
-                    fontSize: 24,
+                    fontSize: 20,
                   ),
                 ),
               ],
@@ -50,7 +50,7 @@ class QuoteCard extends StatelessWidget {
                 color: Theme.of(context).colorScheme.onPrimary,
                 fontWeight: FontWeight.normal,
                 height: 1.4,
-                fontSize: 26,
+                fontSize: 16,
               ),
             ),
           ],
