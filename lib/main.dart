@@ -15,11 +15,11 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp();
-  runApp(const EmpathConnectApp());
+  runApp(const KozaApp());
 }
 
-class EmpathConnectApp extends StatelessWidget {
-  const EmpathConnectApp({super.key});
+class KozaApp extends StatelessWidget {
+  const KozaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +35,7 @@ class EmpathConnectApp extends StatelessWidget {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return MaterialApp(
-            title: 'EmpathConnect',
+            title: 'Koza',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
