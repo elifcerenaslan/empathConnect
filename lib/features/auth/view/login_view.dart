@@ -135,7 +135,19 @@ class _LoginViewState extends State<LoginView>
           margin: const EdgeInsets.all(16),
         ),
       );
-    } catch (_) {}
+    } catch (e) {
+      if (!mounted) return;
+      print('Şifre Sıfırlama Hatası: \$e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Hata: \${e.toString()}'),
+          backgroundColor: Colors.red.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+    }
   }
 
   @override
