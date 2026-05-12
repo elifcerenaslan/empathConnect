@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/providers/theme_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../auth/view/login_view.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key});
@@ -14,15 +15,31 @@ class ProfileView extends StatefulWidget {
 
 class _ProfileViewState extends State<ProfileView> {
   // --- HAFIZA DEĞİŞKENLERİ ---
-  File? _image; 
+  File? _image;
   final ImagePicker _picker = ImagePicker();
 
-  String _username = "İrem"; 
-  String _email = "irem@istun.edu.tr"; 
+  String _username = "";
+  String _email = "";
 
-  bool _notifyMood = true;       
+  bool _notifyMood = true;
   bool _notifyBreathing = false; // EKSİKLİK GİDERİLDİ
-  bool _notifyCommunity = true;  
+  bool _notifyCommunity = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Sayfa açılır açılmaz Firebase'deki aktif kullanıcıyı buluyoruz
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      setState(() {
+        // Firebase'de isim varsa onu al, yoksa e-postanın ilk kısmını kullan
+        _username = (user.displayName != null && user.displayName!.isNotEmpty) 
+            ? user.displayName! 
+            : user.email!.split('@')[0];
+        _email = user.email ?? "E-posta bulunamadı";
+      });
+    }
+  }
 
   // --- FOTOĞRAF SEÇME ---
   Future<void> _pickImage(ImageSource source) async {
@@ -42,7 +59,9 @@ class _ProfileViewState extends State<ProfileView> {
   void _showPhotoOptions() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (context) => SafeArea(
         child: Wrap(
           children: [
@@ -63,9 +82,11 @@ class _ProfileViewState extends State<ProfileView> {
   }
 
   // --- DİALOG PENCERELERİ ---
- // --- YENİ: FİREBASE BAĞLANTILI KULLANICI ADI DEĞİŞTİRME ---
+  // --- YENİ: FİREBASE BAĞLANTILI KULLANICI ADI DEĞİŞTİRME ---
   void _showUsernameChangeDialog() {
-    final TextEditingController controller = TextEditingController(text: _username);
+    final TextEditingController controller = TextEditingController(
+      text: _username,
+    );
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -75,29 +96,36 @@ class _ProfileViewState extends State<ProfileView> {
           decoration: const InputDecoration(labelText: "Yeni Kullanıcı Adı"),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("İptal"),
+          ),
           ElevatedButton(
             // YENİ: İşlem internete gideceği için 'async' (beklemeli) yaptık
             onPressed: () async {
               try {
                 // 1. Firebase'deki mevcut kullanıcıyı bul
                 final user = FirebaseAuth.instance.currentUser;
-                
+
                 // 2. Eğer kullanıcı giriş yapmışsa, ismini Firebase'de güncelle
                 if (user != null) {
                   await user.updateDisplayName(controller.text);
                 }
 
                 // 3. Ekranda görünen yazıyı da anında güncelle
-                setState(() { 
-                  _username = controller.text; 
+                setState(() {
+                  _username = controller.text;
                 });
-                
+
                 // 4. Pencereyi kapat ve başarı mesajı göster
                 if (context.mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text("Harika! Yeni ismin Firebase'e kaydedildi.")),
+                    const SnackBar(
+                      content: Text(
+                        "Harika! Yeni ismin Firebase'e kaydedildi.",
+                      ),
+                    ),
                   );
                 }
               } catch (e) {
@@ -108,8 +136,8 @@ class _ProfileViewState extends State<ProfileView> {
                   );
                 }
               }
-            }, 
-            child: const Text("Kaydet")
+            },
+            child: const Text("Kaydet"),
           ),
         ],
       ),
@@ -118,7 +146,9 @@ class _ProfileViewState extends State<ProfileView> {
 
   // --- FİREBASE BAĞLANTILI E-POSTA DEĞİŞTİRME ---
   void _showEmailChangeDialog() {
-    final TextEditingController controller = TextEditingController(text: _email);
+    final TextEditingController controller = TextEditingController(
+      text: _email,
+    );
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -129,7 +159,10 @@ class _ProfileViewState extends State<ProfileView> {
           decoration: const InputDecoration(labelText: "Yeni E-Posta Adresi"),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("İptal"),
+          ),
           ElevatedButton(
             onPressed: () async {
               try {
@@ -137,28 +170,36 @@ class _ProfileViewState extends State<ProfileView> {
                 if (user != null) {
                   // Firebase'de e-postayı güncelle
                   await user.verifyBeforeUpdateEmail(controller.text);
-                  
-                  setState(() { _email = controller.text; });
-                  
+
+                  setState(() {
+                    _email = controller.text;
+                  });
+
                   if (context.mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("E-posta güncelleme isteği gönderildi. Lütfen yeni adresinizi doğrulayın.")),
+                      const SnackBar(
+                        content: Text(
+                          "E-posta güncelleme isteği gönderildi. Lütfen yeni adresinizi doğrulayın.",
+                        ),
+                      ),
                     );
                   }
                 }
               } on FirebaseAuthException catch (e) {
                 // Eğer uzun süredir giriş yapılmamışsa 'requires-recent-login' hatası döner
-                String message = e.code == 'requires-recent-login' 
-                  ? "Güvenlik nedeniyle yeniden giriş yapmanız gerekiyor." 
-                  : "Hata: ${e.message}";
-                
+                String message = e.code == 'requires-recent-login'
+                    ? "Güvenlik nedeniyle yeniden giriş yapmanız gerekiyor."
+                    : "Hata: ${e.message}";
+
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(message)));
                 }
               }
-            }, 
-            child: const Text("Kaydet")
+            },
+            child: const Text("Kaydet"),
           ),
         ],
       ),
@@ -178,32 +219,39 @@ class _ProfileViewState extends State<ProfileView> {
           decoration: const InputDecoration(labelText: "Yeni Şifre"),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("İptal")),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("İptal"),
+          ),
           ElevatedButton(
             onPressed: () async {
               try {
                 final user = FirebaseAuth.instance.currentUser;
                 if (user != null) {
                   await user.updatePassword(controller.text);
-                  
+
                   if (context.mounted) {
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Şifreniz başarıyla değiştirildi.")),
+                      const SnackBar(
+                        content: Text("Şifreniz başarıyla değiştirildi."),
+                      ),
                     );
                   }
                 }
               } on FirebaseAuthException catch (e) {
-                String message = e.code == 'weak-password' 
-                  ? "Şifre çok zayıf." 
-                  : "Hata: ${e.message}";
-                
+                String message = e.code == 'weak-password'
+                    ? "Şifre çok zayıf."
+                    : "Hata: ${e.message}";
+
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text(message)));
                 }
               }
-            }, 
-            child: const Text("Güncelle")
+            },
+            child: const Text("Güncelle"),
           ),
         ],
       ),
@@ -223,7 +271,10 @@ class _ProfileViewState extends State<ProfileView> {
                 children: [
                   SwitchListTile(
                     title: const Text("Günlük Duygu Takibi"),
-                    subtitle: const Text("Her akşam nasıl hissettiğini sorarız.", style: TextStyle(fontSize: 12)),
+                    subtitle: const Text(
+                      "Her akşam nasıl hissettiğini sorarız.",
+                      style: TextStyle(fontSize: 12),
+                    ),
                     value: _notifyMood,
                     onChanged: (val) {
                       setStateDialog(() => _notifyMood = val);
@@ -233,7 +284,10 @@ class _ProfileViewState extends State<ProfileView> {
                   // EKSİKLİK GİDERİLDİ: Nefes egzersizi eklendi
                   SwitchListTile(
                     title: const Text("Nefes Egzersizi"),
-                    subtitle: const Text("Stres anlarında hatırlatıcı gönderir.", style: TextStyle(fontSize: 12)),
+                    subtitle: const Text(
+                      "Stres anlarında hatırlatıcı gönderir.",
+                      style: TextStyle(fontSize: 12),
+                    ),
                     value: _notifyBreathing,
                     onChanged: (val) {
                       setStateDialog(() => _notifyBreathing = val);
@@ -242,7 +296,10 @@ class _ProfileViewState extends State<ProfileView> {
                   ),
                   SwitchListTile(
                     title: const Text("Topluluk Mesajları"),
-                    subtitle: const Text("Yeni destek mesajlarında uyarır.", style: TextStyle(fontSize: 12)),
+                    subtitle: const Text(
+                      "Yeni destek mesajlarında uyarır.",
+                      style: TextStyle(fontSize: 12),
+                    ),
                     value: _notifyCommunity,
                     onChanged: (val) {
                       setStateDialog(() => _notifyCommunity = val);
@@ -252,10 +309,13 @@ class _ProfileViewState extends State<ProfileView> {
                 ],
               ),
               actions: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text("Kapat")),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Kapat"),
+                ),
               ],
             );
-          }
+          },
         );
       },
     );
@@ -271,7 +331,7 @@ class _ProfileViewState extends State<ProfileView> {
         child: Column(
           children: [
             const SizedBox(height: 30),
-            
+
             // --- PROFİL FOTOĞRAFI ALANI ---
             Center(
               child: Column(
@@ -282,9 +342,15 @@ class _ProfileViewState extends State<ProfileView> {
                       CircleAvatar(
                         radius: 60,
                         backgroundColor: Theme.of(context).colorScheme.primary,
-                        backgroundImage: _image != null ? FileImage(_image!) : null,
-                        child: _image == null 
-                            ? const Icon(Icons.person, size: 75, color: Colors.white) 
+                        backgroundImage: _image != null
+                            ? FileImage(_image!)
+                            : null,
+                        child: _image == null
+                            ? const Icon(
+                                Icons.person,
+                                size: 75,
+                                color: Colors.white,
+                              )
                             : null,
                       ),
                       GestureDetector(
@@ -296,14 +362,27 @@ class _ProfileViewState extends State<ProfileView> {
                             shape: BoxShape.circle,
                             border: Border.all(color: Colors.white, width: 2),
                           ),
-                          child: const Icon(Icons.camera_alt, size: 20, color: Colors.white),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            size: 20,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  Text(_username, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                  Text(_email, style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                  Text(
+                    _username,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    _email,
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
+                  ),
                 ],
               ),
             ),
@@ -311,29 +390,95 @@ class _ProfileViewState extends State<ProfileView> {
 
             // --- AYARLAR ---
             _buildSection(context, "Hesap Ayarları", [
-              _buildSettingTile(context, Icons.person_outline, "Kullanıcı Adını Değiştir", onTap: _showUsernameChangeDialog),
-              _buildSettingTile(context, Icons.email_outlined, "E-Posta Değiştir", onTap: _showEmailChangeDialog),
+              _buildSettingTile(
+                context,
+                Icons.person_outline,
+                "Kullanıcı Adını Değiştir",
+                onTap: _showUsernameChangeDialog,
+              ),
+              _buildSettingTile(
+                context,
+                Icons.email_outlined,
+                "E-Posta Değiştir",
+                onTap: _showEmailChangeDialog,
+              ),
               // EKSİKLİK GİDERİLDİ: Şifre değiştirme butonu aktifleştirildi
-              _buildSettingTile(context, Icons.lock_outline, "Şifre Değiştir", onTap: _showPasswordChangeDialog),
+              _buildSettingTile(
+                context,
+                Icons.lock_outline,
+                "Şifre Değiştir",
+                onTap: _showPasswordChangeDialog,
+              ),
             ]),
 
             _buildSection(context, "Uygulama Tercihleri", [
               _buildSettingTile(
                 context,
-                Icons.dark_mode_outlined, 
-                "Karanlık Mod", 
+                Icons.dark_mode_outlined,
+                "Karanlık Mod",
                 trailing: Switch(
-                  value: themeProvider.isDarkMode, 
+                  value: themeProvider.isDarkMode,
                   onChanged: (v) => themeProvider.toggleTheme(),
                 ),
               ),
-              _buildSettingTile(context, Icons.notifications_outlined, "Bildirimler", onTap: _showNotificationsDialog),
+              _buildSettingTile(
+                context,
+                Icons.notifications_outlined,
+                "Bildirimler",
+                onTap: _showNotificationsDialog,
+              ),
             ]),
 
             _buildSection(context, "Destek", [
-              _buildSettingTile(context, Icons.logout, "Çıkış Yap", color: Colors.red, onTap: () => Navigator.pop(context)),
+              _buildSettingTile(
+                context,
+                Icons.logout,
+                "Çıkış Yap",
+                color: Colors.red,
+                onTap: () async {
+                  // 1. Önce emin misin dialogu
+                  final shouldLogout = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text("Çıkış Yap"),
+                      content: const Text("Hesabınızdan çıkış yapmak istediğinize emin misiniz?"),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text("İptal"),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text("Çıkış Yap"),
+                        ),
+                      ],
+                    ),
+                  );
+                  // Kullanıcı iptal ettiyse dur
+                  if (shouldLogout != true) return;
+
+                  try {
+                    // 2. Firebase çıkış
+                    await FirebaseAuth.instance.signOut();
+                    // 3. Giriş ekranına yönlendir
+                    if (context.mounted) {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (context) => const LoginView()),
+                        (route) => false,
+                      );
+                    }
+                  } catch (e) {
+                    // Hata olursa kullanıcıya haber ver
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Çıkış yaparken bir hata oluştu: $e")),
+                      );
+                    }
+                  }
+                },
+              ),
             ]),
-            
+
             const SizedBox(height: 40),
           ],
         ),
@@ -347,22 +492,40 @@ class _ProfileViewState extends State<ProfileView> {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-          child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
         ),
         Card(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           elevation: 0,
           color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
           child: Column(children: items),
         ),
       ],
     );
   }
 
-  Widget _buildSettingTile(BuildContext context, IconData icon, String title, {Widget? trailing, Color? color, VoidCallback? onTap}) {
+  Widget _buildSettingTile(
+    BuildContext context,
+    IconData icon,
+    String title, {
+    Widget? trailing,
+    Color? color,
+    VoidCallback? onTap,
+  }) {
     return ListTile(
-      leading: Icon(icon, color: color ?? Theme.of(context).colorScheme.onSurface),
+      leading: Icon(
+        icon,
+        color: color ?? Theme.of(context).colorScheme.onSurface,
+      ),
       title: Text(title, style: TextStyle(color: color)),
       trailing: trailing ?? const Icon(Icons.chevron_right, size: 20),
       onTap: onTap,

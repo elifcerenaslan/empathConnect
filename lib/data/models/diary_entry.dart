@@ -5,6 +5,7 @@ class DiaryEntry {
   final double moodScore;
   final String content;
   final DateTime createdAt;
+  final String? imageUrl; // Yeni eklenen fotoğraf linki alanı
 
   DiaryEntry({
     required this.id,
@@ -13,6 +14,7 @@ class DiaryEntry {
     required this.moodScore,
     required this.content,
     required this.createdAt,
+    this.imageUrl, // İsteğe bağlı
   });
 
   Map<String, dynamic> toMap() {
@@ -23,6 +25,7 @@ class DiaryEntry {
       'moodScore': moodScore,
       'content': content,
       'createdAt': createdAt.toIso8601String(),
+      'imageUrl': imageUrl,
     };
   }
 
@@ -34,6 +37,7 @@ class DiaryEntry {
       moodScore: map['moodScore']?.toDouble() ?? 0.0,
       content: map['content'] ?? '',
       createdAt: DateTime.parse(map['createdAt']),
+      imageUrl: map['imageUrl'],
     );
   }
 }

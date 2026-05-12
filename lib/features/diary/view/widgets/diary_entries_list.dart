@@ -1,44 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../../../data/models/diary_entry.dart';
+import '../../services/diary_service.dart';
 
 class DiaryEntriesList extends StatelessWidget {
-  final List<DiaryEntry> entries;
-
-  const DiaryEntriesList({super.key, required this.entries});
+  const DiaryEntriesList({super.key});
 
   @override
   Widget build(BuildContext context) {
-    if (entries.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.all(32),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(
-                Icons.book,
-                size: 64,
-                color: Theme.of(context).colorScheme.outline,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Henüz günlük kaydı yok',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'İlk günlük kaydını oluşturmak için yukarıdaki formu doldurun',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    final DiaryService diaryService = DiaryService();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,54 +17,132 @@ class DiaryEntriesList extends StatelessWidget {
           style: Theme.of(context).textTheme.headlineSmall,
         ),
         const SizedBox(height: 16),
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: entries.length,
-          itemBuilder: (context, index) {
-            final entry = entries[index];
-            return Card(
-              margin: const EdgeInsets.only(bottom: 12),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          entry.emotion,
-                          style: const TextStyle(fontSize: 24),
-                        ),
-                        const Spacer(),
-                        Text(
-                          'Puan: ${entry.moodScore.toInt()}',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(context).colorScheme.outline,
-                              ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    if (entry.content.isNotEmpty) ...[
-                      Text(
-                        entry.content,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    Text(
-                      _formatDate(entry.createdAt),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        StreamBuilder<List<DiaryEntry>>(
+          stream: diaryService.getUserEntries(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return Center(child: Text('Bir hata oluştu: ${snapshot.error}'));
+            }
+
+            final entries = snapshot.data ?? [];
+
+            if (entries.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(32),
+                child: Center(
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.book,
+                        size: 64,
                         color: Theme.of(context).colorScheme.outline,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+                      Text(
+                        'Henüz günlük kaydı yok',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'İlk günlük kaydını oluşturmak için yukarıdaki formu doldurun',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
+              );
+            }
+
+            return ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: entries.length,
+              itemBuilder: (context, index) {
+                final entry = entries[index];
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  clipBehavior: Clip.antiAlias, // For image corners
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (entry.imageUrl != null && entry.imageUrl!.isNotEmpty)
+                        Image.network(
+                          entry.imageUrl!,
+                          width: double.infinity,
+                          height: 200,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              height: 200,
+                              width: double.infinity,
+                              color: Colors.grey[200],
+                              child: const Center(child: CircularProgressIndicator()),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) => Container(
+                            height: 200,
+                            width: double.infinity,
+                            color: Colors.grey[200],
+                            child: const Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                          ),
+                        ),
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  entry.emotion,
+                                  style: const TextStyle(fontSize: 24),
+                                ),
+                                const Spacer(),
+                                Text(
+                                  'Puan: ${entry.moodScore.toInt()}',
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: Theme.of(context).colorScheme.outline,
+                                      ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                  onPressed: () {
+                                    diaryService.deleteEntry(entry.id, entry.imageUrl);
+                                  },
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            if (entry.content.isNotEmpty) ...[
+                              Text(
+                                entry.content,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                              const SizedBox(height: 8),
+                            ],
+                            Text(
+                              _formatDate(entry.createdAt),
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             );
           },
         ),

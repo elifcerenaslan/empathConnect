@@ -9,21 +9,17 @@ import 'core/providers/theme_provider.dart';
 import 'features/home/view/home_view.dart';
 import 'features/auth/view/login_view.dart';
 import 'core/services/auth_service.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await dotenv.load(fileName: ".env");
-  } catch (e) {
-    print("Env dosyası yüklenemedi (veya boş): \$e");
-  }
+
   await Firebase.initializeApp();
-  runApp(const EmpathConnectApp());
+  runApp(const KozaApp());
 }
 
-class EmpathConnectApp extends StatelessWidget {
-  const EmpathConnectApp({super.key});
+class KozaApp extends StatelessWidget {
+  const KozaApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +35,7 @@ class EmpathConnectApp extends StatelessWidget {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return MaterialApp(
-            title: 'EmpathConnect',
+            title: 'Koza',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
