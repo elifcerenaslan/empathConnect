@@ -99,7 +99,7 @@ class _CommunityViewState extends State<CommunityView> {
                 child: Column(
                   children: [
                     SizedBox(
-                      height: 104,
+                      height: 120,
                       child: ListView.builder(
                         scrollDirection: Axis.horizontal,
                         padding: const EdgeInsets.symmetric(
@@ -232,7 +232,6 @@ class _StoryAvatar extends StatelessWidget {
                 border: isAddButton
                     ? Border.all(color: Colors.grey.shade300, width: 1.5)
                     : null,
-                borderRadius: BorderRadius.circular(50),
               ),
               child: CircleAvatar(
                 radius: 28,
