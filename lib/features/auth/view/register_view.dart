@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../core/services/auth_service.dart';
+import '../../home/view/home_view.dart';
 
 class RegisterView extends StatefulWidget {
   const RegisterView({super.key});
@@ -90,7 +91,29 @@ class _RegisterViewState extends State<RegisterView>
         _passwordController.text.trim(),
         _usernameController.text.trim(),
       );
-      // AuthWrapper otomatik yönlendirir
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              const Expanded(child: Text('Kayıt başarıyla oluşturuldu!')),
+            ],
+          ),
+          backgroundColor: Colors.green.shade700,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+      
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeView()),
+        (route) => false,
+      );
     } catch (e) {
       if (!mounted) return;
       String errorMessage = e.toString(); // Firebase'in gerçek hatasını ekrana yansıtıyoruz

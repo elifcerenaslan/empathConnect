@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -49,26 +48,6 @@ class DiaryService {
         .collection('diaryEntries')
         .doc(entry.id)
         .set(entryToSave.toMap());
-  }
-
-  // Fotoğrafı Storage'a yükleyip URL'sini döndürme
-  Future<String?> uploadImage(File imageFile, String entryId) async {
-    final user = _auth.currentUser;
-    if (user == null) throw Exception('Kullanıcı girişi yapılmamış.');
-
-    try {
-      final ref = _storage.ref().child('diary_images/${user.uid}/$entryId.jpg');
-      
-      // Upload task
-      final uploadTask = await ref.putFile(imageFile);
-      
-      // Get URL
-      final url = await uploadTask.ref.getDownloadURL();
-      return url;
-    } catch (e) {
-      print('Resim yükleme hatası: $e');
-      return null;
-    }
   }
 
   // Günlük silme

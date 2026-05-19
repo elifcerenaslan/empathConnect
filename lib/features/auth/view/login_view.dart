@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../../core/services/auth_service.dart';
+import '../../home/view/home_view.dart';
 import 'register_view.dart';
 
 class LoginView extends StatefulWidget {
@@ -67,8 +68,12 @@ class _LoginViewState extends State<LoginView>
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-      // AuthWrapper otomatik olarak HomeView'a yönlendiriyor,
-      // buraya ulaşılmaz ama mounted kontrolü güvenlik için.
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const HomeView()),
+        (route) => false,
+      );
     } catch (e) {
       if (!mounted) return;
       String errorMessage = e.toString(); // Firebase'in gerçek hatasını ekrana yansıtıyoruz
