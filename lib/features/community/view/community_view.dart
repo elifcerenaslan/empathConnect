@@ -94,46 +94,6 @@ class _CommunityViewState extends State<CommunityView> {
 
           return CustomScrollView(
             slivers: [
-              // ── Stories Şeridi ──────────────────────
-              SliverToBoxAdapter(
-                child: Column(
-                  children: [
-                    SizedBox(
-                      height: 104,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        itemCount: posts.length + 1, // +1 kendi story'si
-                        itemBuilder: (ctx, i) {
-                          if (i == 0) {
-                            // Kendi Story Ekle
-                            return _StoryAvatar(
-                              label: 'Hikayeni\nEkle',
-                              isAddButton: true,
-                              colorScheme: colorScheme,
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => const CreatePostView()),
-                              ),
-                            );
-                          }
-                          final post = posts[i - 1];
-                          return _StoryAvatar(
-                            label: post.username,
-                            imageUrl: post.userProfileImage,
-                            colorScheme: colorScheme,
-                            onTap: () {},
-                          );
-                        },
-                      ),
-                    ),
-                    Divider(height: 1, color: Colors.grey.withOpacity(0.15)),
-                  ],
-                ),
-              ),
-
               // ── Gönderi Akışı ───────────────────────
               if (posts.isEmpty)
                 SliverFillRemaining(
@@ -142,7 +102,7 @@ class _CommunityViewState extends State<CommunityView> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          Icons.photo_library_outlined,
+                          Icons.chat_bubble_outline,
                           size: 72,
                           color: colorScheme.primary.withOpacity(0.4),
                         ),
@@ -187,78 +147,6 @@ class _CommunityViewState extends State<CommunityView> {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-// ── Story Avatarı ──────────────────────────────────────
-class _StoryAvatar extends StatelessWidget {
-  final String label;
-  final String? imageUrl;
-  final bool isAddButton;
-  final ColorScheme colorScheme;
-  final VoidCallback onTap;
-
-  const _StoryAvatar({
-    required this.label,
-    required this.colorScheme,
-    required this.onTap,
-    this.imageUrl,
-    this.isAddButton = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 72,
-        margin: const EdgeInsets.only(right: 12),
-        child: Column(
-          children: [
-            // Gradient border
-            Container(
-              padding: const EdgeInsets.all(2.5),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: isAddButton
-                    ? null
-                    : LinearGradient(
-                        colors: [colorScheme.tertiary, colorScheme.primary],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                border: isAddButton
-                    ? Border.all(color: Colors.grey.shade300, width: 1.5)
-                    : null,
-                borderRadius: BorderRadius.circular(50),
-              ),
-              child: CircleAvatar(
-                radius: 28,
-                backgroundColor: colorScheme.primary.withOpacity(0.1),
-                backgroundImage:
-                    imageUrl != null && imageUrl!.isNotEmpty
-                        ? NetworkImage(imageUrl!)
-                        : null,
-                child: isAddButton
-                    ? Icon(Icons.add, color: colorScheme.primary, size: 24)
-                    : (imageUrl == null || imageUrl!.isEmpty
-                        ? Icon(Icons.person,
-                            color: colorScheme.primary, size: 24)
-                        : null),
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 11),
-              maxLines: 2,
-              textAlign: TextAlign.center,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
       ),
     );
   }

@@ -21,7 +21,7 @@ class CommunityService {
   }
 
   // Yeni gönderi paylaş
-  Future<void> createPost(String caption, String imageUrl) async {
+  Future<void> createPost(String text) async {
     try {
       final user = _authService.currentUser;
       if (user == null) throw Exception("Kullanıcı giriş yapmamış.");
@@ -36,15 +36,15 @@ class CommunityService {
         userId: user.uid,
         username: userDetails?.username ?? 'Bilinmeyen Kullanıcı',
         userProfileImage: userDetails?.profileImageUrl ?? '',
-        imageUrl: imageUrl,
-        caption: caption,
+        text: text,
         likes: [],
+        reposts: [],
         createdAt: DateTime.now(),
       );
 
       await postRef.set(newPost.toMap());
     } catch (e) {
-      print("Gönderi Paylaşma Hatası: \$e");
+      print("Gönderi Paylaşma Hatası: $e");
       rethrow;
     }
   }
@@ -67,7 +67,50 @@ class CommunityService {
         });
       }
     } catch (e) {
-      print("Beğeni Hatası: \$e");
+      print("Beğeni Hatası: $e");
+    }
+  }
+
+  // Gönderiyi repost et / geri al
+  Future<void> toggleRepost(String postId, List<String> currentReposts) async {
+    try {
+      final user = _authService.currentUser;
+      if (user == null) return;
+
+      final postRef = _firestore.collection('posts').doc(postId);
+
+      if (currentReposts.contains(user.uid)) {
+        await postRef.update({
+          'reposts': FieldValue.arrayRemove([user.uid])
+        });
+      } else {
+        await postRef.update({
+          'reposts': FieldValue.arrayUnion([user.uid])
+        });
+      }
+    } catch (e) {
+      print("Repost Hatası: $e");
+    }
+  }
+
+  // Gönderiyi sil
+  Future<void> deletePost(String postId) async {
+    try {
+      final user = _authService.currentUser;
+      if (user == null) throw Exception("Kullanıcı giriş yapmamış.");
+
+      final postRef = _firestore.collection('posts').doc(postId);
+      
+      // Önce gönderiye ait yorumları silelim (opsiyonel ama iyi bir pratik)
+      final commentsSnapshot = await postRef.collection('comments').get();
+      for (var doc in commentsSnapshot.docs) {
+        await doc.reference.delete();
+      }
+
+      await postRef.delete();
+    } catch (e) {
+      print("Silme Hatası: $e");
+      rethrow;
     }
   }
 

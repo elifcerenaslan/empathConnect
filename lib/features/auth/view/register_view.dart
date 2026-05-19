@@ -267,7 +267,7 @@ class _RegisterViewState extends State<RegisterView>
                         borderRadius: BorderRadius.circular(24),
                         child: BackdropFilter(
                           filter:
-                              ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                              ImageFilter.blur(sigmaX: 8, sigmaY: 8),
                           child: Container(
                             padding: const EdgeInsets.all(28),
                             decoration: BoxDecoration(

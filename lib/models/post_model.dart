@@ -5,9 +5,9 @@ class PostModel {
   final String userId;
   final String username;
   final String userProfileImage;
-  final String imageUrl;
-  final String caption;
+  final String text;
   final List<String> likes;
+  final List<String> reposts;
   final DateTime createdAt;
 
   PostModel({
@@ -15,9 +15,9 @@ class PostModel {
     required this.userId,
     required this.username,
     required this.userProfileImage,
-    required this.imageUrl,
-    required this.caption,
+    required this.text,
     required this.likes,
+    required this.reposts,
     required this.createdAt,
   });
 
@@ -27,9 +27,9 @@ class PostModel {
       'userId': userId,
       'username': username,
       'userProfileImage': userProfileImage,
-      'imageUrl': imageUrl,
-      'caption': caption,
+      'text': text,
       'likes': likes,
+      'reposts': reposts,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -40,9 +40,9 @@ class PostModel {
       userId: map['userId'] ?? '',
       username: map['username'] ?? '',
       userProfileImage: map['userProfileImage'] ?? '',
-      imageUrl: map['imageUrl'] ?? '',
-      caption: map['caption'] ?? '',
+      text: map['text'] ?? map['caption'] ?? '',
       likes: List<String>.from(map['likes'] ?? []),
+      reposts: List<String>.from(map['reposts'] ?? []),
       createdAt: (map['createdAt'] as Timestamp).toDate(),
     );
   }

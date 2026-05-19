@@ -10,14 +10,13 @@ class CreatePostView extends StatefulWidget {
 
 class _CreatePostViewState extends State<CreatePostView> {
   final _captionController = TextEditingController();
-  final _imageUrlController = TextEditingController(); // Şimdilik basit URL girişi, ileride ImagePicker eklenecek
   final CommunityService _communityService = CommunityService();
   bool _isLoading = false;
 
   void _sharePost() async {
     if (_captionController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Lütfen bir açıklama yazın.')),
+        const SnackBar(content: Text('Lütfen bir şeyler yazın.')),
       );
       return;
     }
@@ -27,12 +26,7 @@ class _CreatePostViewState extends State<CreatePostView> {
     });
 
     try {
-      await _communityService.createPost(
-        _captionController.text,
-        _imageUrlController.text.isNotEmpty 
-            ? _imageUrlController.text 
-            : 'https://via.placeholder.com/400', // Varsayılan görsel
-      );
+      await _communityService.createPost(_captionController.text);
       
       if (!mounted) return;
       Navigator.pop(context); // Başarılıysa geri dön
@@ -53,7 +47,6 @@ class _CreatePostViewState extends State<CreatePostView> {
   @override
   void dispose() {
     _captionController.dispose();
-    _imageUrlController.dispose();
     super.dispose();
   }
 
@@ -77,27 +70,13 @@ class _CreatePostViewState extends State<CreatePostView> {
           children: [
             TextField(
               controller: _captionController,
-              maxLines: 4,
+              maxLines: 8,
               decoration: const InputDecoration(
-                hintText: 'Düşüncelerini paylaş...',
+                hintText: 'Neler oluyor?',
                 border: InputBorder.none,
               ),
+              style: const TextStyle(fontSize: 18),
             ),
-            const Divider(),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _imageUrlController,
-              decoration: const InputDecoration(
-                hintText: 'Görsel URL\'si (Opsiyonel)',
-                prefixIcon: Icon(Icons.link),
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Not: İlerleyen aşamalarda buraya doğrudan galeriden fotoğraf seçme (ImagePicker) özelliği eklenecektir.',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
-            )
           ],
         ),
       ),
